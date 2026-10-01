@@ -10,14 +10,13 @@
   <link rel="stylesheet" href="./echgammon/academy.css">
   <link rel="stylesheet" href="./echgammon/analysis.css">
   <link rel="stylesheet" href="./echgammon/fleet.css">
+  <link rel="stylesheet" href="./echgammon/match-layout.css">
 </head>
 <body>
 <main class="salon">
-  <nav class="match-nav" aria-label="Retour au salon"><a id="back-to-lobby" href="./index.html">← Le Salon</a><span id="match-context">PARTIE LIBRE</span><a href="./index.html#learn">Académie ↗</a></nav>
-  <header class="masthead">
-    <p class="motto">DEUX MONDES<br>UNE SEULE<br>STRATÉGIE</p>
-    <div class="brand"><svg class="brand-crown" viewBox="0 0 64 42" aria-hidden="true"><path d="M8 12l14 13L32 5l10 20 14-13-6 24H14zM14 40h36"/></svg><h1>ÉCHGAMMON</h1><p class="subtitle">Classique Royal</p><span class="ribbon">LES ÉCHECS RENCONTRENT LE BACKGAMMON</span></div>
-    <p class="motto right">RÉFLEXION<br>TACTIQUE<br>PARCOURS</p>
+  <header class="match-header">
+    <nav class="match-nav" aria-label="Retour au salon"><a id="back-to-lobby" href="./index.html">← Salon</a><h1>Échgammon</h1><span id="match-context">PARTIE LIBRE</span></nav>
+    <div class="match-actions"><button id="match-quick-fleet" aria-pressed="false">Vue 3D</button><button id="match-help" aria-haspopup="dialog" hidden>Aide</button><button id="match-options" aria-haspopup="dialog">Options &amp; journal</button></div>
   </header>
   <nav class="tools" aria-label="Options de partie">
     <label>PARTIE<select id="mode"><option value="ai">Contre l’ordinateur</option><option value="local">Deux joueurs · même écran</option></select></label>
@@ -31,6 +30,7 @@
     <span class="versus">VS</span>
     <div id="player-b" class="player"><span class="player-medallion ebony">♚</span><div><h2>Ébène <small id="role-b">ORDINATEUR</small></h2><p><strong id="score-b">0</strong> / 15 pions sortis <span class="separator">·</span> <span id="bar-count-b">0</span> sur la barre</p></div></div>
   </section>
+  <div id="play-surface" class="play-surface">
   <section id="fleet-presentation" class="fleet-presentation" aria-label="La flotte royale en trois dimensions" hidden>
     <header class="fleet-heading"><div><p>LA CITADELLE DES MARÉES</p><h2>Le Royaume &amp; la Flotte</h2></div><span class="fleet-edition">COLLECTION ROYALE · 3D</span></header>
     <div id="fleet-container" class="fleet-container" aria-describedby="fleet-help fleet-status" aria-busy="false"></div>
@@ -48,6 +48,7 @@
     <div id="track-right" class="track" aria-label="Piste de course droite"></div>
     <div class="cabinet-sign"><strong>ÉCHGAMMON</strong><em>Classique Royal</em></div>
   </section></div></div>
+  </div>
   <section class="race-rails" aria-label="Barre et zones de sortie">
     <div class="rail"><button id="bar-w" class="bar-button">Barre ivoire <b>0</b></button><button id="off-w" class="off-button"><span>Sortie ivoire</span><span class="off-coins"></span><b>0 / 15</b></button></div>
     <div class="rail"><button id="bar-b" class="bar-button">Barre ébène <b>0</b></button><button id="off-b" class="off-button"><span>Sortie ébène</span><span class="off-coins"></span><b>0 / 15</b></button></div>
@@ -63,6 +64,8 @@
   <section id="analysis-panel" class="analysis-panel" aria-label="Analyse expliquée" hidden></section>
   <footer><span>ÉCHGAMMON <i>—</i> Classique Royal</span><span>PARTIE LOCALE · SANS COMPTE · ÉDITION 4.1</span></footer>
 </main>
+<dialog id="match-options-dialog" class="match-drawer" aria-labelledby="match-options-title"><div class="drawer-heading"><h2 id="match-options-title">Votre partie</h2><button data-close-drawer aria-label="Fermer les options">Fermer ×</button></div><div id="match-options-content"></div><a class="academy-link" href="./index.html#learn">Découvrir l’Académie ↗</a></dialog>
+<dialog id="match-help-dialog" class="match-drawer" aria-labelledby="match-help-title"><div class="drawer-heading"><h2 id="match-help-title">L’exercice pas à pas</h2><button data-close-drawer aria-label="Fermer l’aide">Fermer ×</button></div><div id="match-help-content"></div></dialog>
 <dialog id="rules-dialog" class="parchment"><button id="close-rules" class="dialog-close" aria-label="Fermer les règles">×</button><p class="eyebrow">LE LIVRET DU COFFRET</p><h2>Règles du jeu</h2><p class="intro">Deux mondes. Les mêmes dés. Une seule victoire.</p>
   <div class="rules-grid">
     <section><h3>01 · Gagner</h3><p>Matez le roi adverse <strong>ou</strong> sortez vos 15 pions de course. Le premier objectif accompli termine immédiatement la partie.</p></section>
@@ -78,5 +81,6 @@
 <dialog id="promotion-dialog" class="parchment small-dialog"><h2>Choisissez votre promotion</h2><p>Votre pion a atteint la dernière rangée.</p><div id="promotion-choices" class="promotion-choices"></div></dialog>
 <noscript>Activez JavaScript pour jouer à Échgammon.</noscript>
 <script type="module" src="./echgammon/view.mjs"></script>
+<script type="module" src="./echgammon/match-layout.mjs"></script>
 </body>
 </html>

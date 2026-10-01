@@ -4,6 +4,7 @@ import {DRACOLoader} from '../assets/fleet/vendor/DRACOLoader.js';
 import {OrbitControls} from '../assets/fleet/vendor/OrbitControls.js';
 import {clone as cloneSkeleton} from '../assets/fleet/vendor/SkeletonUtils.js';
 import {RoomEnvironment} from '../assets/fleet/vendor/RoomEnvironment.js';
+import {createDiceVisuals,playDiceFrames} from './dice-visuals.mjs';
 
 // Presentation only: coordinates and animation never decide whether a move is legal.
 const ASSETS=new URL('../assets/fleet/',import.meta.url);
@@ -33,6 +34,7 @@ const vector=a=>new THREE.Vector3(...a);
 /** Load the actual Blender exports; callers keep the accessible 2D controls. */
 export async function createFleetView({container,onSquare,onPoint,onBar,onOff,onBusy=()=>{}}) {
   let disposed=false,enabled=true,intersecting=true,busy=false,frame=0,lastTime=0,current=null,pending=null,animation=null;
+  let diceVisuals=null,diceAbort=null,diceCamera=null;
   let cameraMode=container.clientWidth<680?'chess':'overview';
   const reduced=matchMedia('(prefers-reduced-motion: reduce)');
   const scene=new THREE.Scene();scene.background=new THREE.Color(0x081b25);
@@ -161,6 +163,19 @@ export async function createFleetView({container,onSquare,onPoint,onBar,onOff,on
   const intersectionObserver=new IntersectionObserver(entries=>{intersecting=entries[0].isIntersecting;visibility();});intersectionObserver.observe(container);
   document.addEventListener('visibilitychange',visibility);controls.addEventListener('change',draw);
   function setEnabled(value){enabled=Boolean(value);controls.enabled=enabled;visibility();if(enabled){resize();draw();}}
+  function clearDice(){
+    diceAbort?.abort();diceAbort=null;diceVisuals?.dispose();diceVisuals=null;
+    if(diceCamera&&!disposed)setCamera(diceCamera);diceCamera=null;
+  }
+  async function animateDice({result,signal,onCollision}){
+    clearDice();diceCamera=cameraMode;setCamera('chess');setBusy(true);controls.enabled=false;
+    const controller=new AbortController();diceAbort=controller;
+    const abort=()=>controller.abort();signal?.addEventListener('abort',abort,{once:true});if(signal?.aborted)abort();
+    diceVisuals=createDiceVisuals();diceVisuals.group.position.y=1.56;scene.add(diceVisuals.group);
+    container.dataset.diceValues=result.values.join(',');container.dataset.dicePhysics='cannon-es';
+    try{return await playDiceFrames({result,visuals:diceVisuals,draw:()=>{renderer.shadowMap.needsUpdate=true;draw();},signal:controller.signal,reducedMotion:reduced.matches,onCollision});}
+    finally{signal?.removeEventListener('abort',abort);if(!disposed){controls.enabled=enabled;setBusy(false);}}
+  }
   function clearEffects(){while(effects.children.length){const child=effects.children[0];effects.remove(child);child.traverse(o=>{o.geometry?.dispose();if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());else o.material?.dispose();});}}
   function createAttackFx(code,start,end) {
     const kind=captureEffect(code),color=code==='wQ'?0xff4d7d:code[0]==='w'?0xffbd57:0x6bddff;
@@ -224,7 +239,7 @@ export async function createFleetView({container,onSquare,onPoint,onBar,onOff,on
     });
   }
   function dispose() {
-    if(disposed)return;disposed=true;animation?.finish();cancelAnimationFrame(frame);resizeObserver.disconnect();intersectionObserver.disconnect();document.removeEventListener('visibilitychange',visibility);controls.dispose();draco.dispose();clearEffects();
+    if(disposed)return;disposed=true;clearDice();animation?.finish();cancelAnimationFrame(frame);resizeObserver.disconnect();intersectionObserver.disconnect();document.removeEventListener('visibilitychange',visibility);controls.dispose();draco.dispose();clearEffects();
     const geometries=new Set(generatedGeometry),materials=new Set(generatedMaterial),textures=new Set();
     scene.traverse(o=>{if(o.geometry)geometries.add(o.geometry);for(const m of o.material?(Array.isArray(o.material)?o.material:[o.material]):[])materials.add(m);});
     for(const m of materials){for(const v of Object.values(m))if(v?.isTexture)textures.add(v);m.dispose();}for(const g of geometries)g.dispose();for(const t of textures)t.dispose();key.shadow.dispose();env.dispose();renderer.dispose();renderer.forceContextLoss();canvas.remove();container.dataset.fleetState='disposed';
@@ -237,6 +252,6 @@ export async function createFleetView({container,onSquare,onPoint,onBar,onOff,on
     boardGroup.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});renderer.shadowMap.needsUpdate=true;
     for(const side of ['w','b'])for(let i=0;i<15;i++)makeChecker(side);
     resize();setCamera(cameraMode);container.dataset.fleetState='ready';container.dataset.fleetAssetSource='blender-glb';container.dataset.fleetClips=String(PIECES.reduce((n,p)=>n+templates.get(p).animations.length,0));wake();
-    return {sync,animate,dispose,resize,setCamera,focus:setCamera,setEnabled};
+    return {sync,animate,animateDice,clearDice,dispose,resize,setCamera,focus:setCamera,setEnabled};
   } catch(error) {dispose();container.dataset.fleetState='error';throw new Error('Le décor 3D ne peut pas être chargé. Le plateau accessible reste disponible.',{cause:error});}
 }

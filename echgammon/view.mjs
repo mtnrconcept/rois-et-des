@@ -11,6 +11,7 @@ import {startTraining,attemptTraining,revealHint,showSolution,solutionAction,sta
 import {readProgress,writeProgress,recordExercise,recordGame} from './progress.mjs';
 import {trainingCoach,actionExplanation,sourceTarget,bubble} from './coach.mjs';
 import {createFleetBridge,watchFleetContextLoss} from './fleet-bridge.mjs';
+import {simulateRoll,boardObstacles} from './dice-roll.mjs';
 const $=s=>document.querySelector(s), STORE='echgammon.royal.v3';
 const aiEngine=createEngineClient(),hintEngine=createEngineClient(),wood=createWoodAudio();
 let analysisPanel=null,hintSerial=0;
@@ -21,12 +22,13 @@ const invalidTraining=(params.has('lesson')&&!lesson)||(params.has('puzzle')&&!e
 let training=exercise?startTraining(exercise.id):null,coach=null,introActive=Boolean(lesson),feedback='';
 let game=createGame(),mode='ai',level='medium',bot=null,assisted=false,selected=null,selectedDice=[],available=[],timer=null,generation=0,promotions=[];
 let fleetEnabled=false,fleetLoading=false,rendererBusy=false,fleetLoadSerial=0;
+let diceRolling=false,diceRollError='',rollSerial=0,rollAbort=null,diceOverlay=null;
 let detachFleetContext=()=>{};
 const fleet=createFleetBridge({
  getState:()=>({game,selected,available:filtered(),canInteract:human()&&game.phase==='play'}),
  onBusy:()=>render(),onError:()=>fleetFailure()
 });
-const fleetBusy=()=>fleetLoading||rendererBusy||fleet.busy;
+const fleetBusy=()=>diceRolling||fleetLoading||rendererBusy||fleet.busy;
 let sessionId=globalThis.crypto?.randomUUID?.()||('local-'+Date.now()+'-'+Math.random().toString(36).slice(2));
 try {const saved=JSON.parse(localStorage.getItem(STORE));if(!training&&!invalidTraining&&!params.has('fresh')&&saved&&isState(saved.game)&&!(saved.game.phase==='play'&&!actions(saved.game).length)){
  game=saved.game;mode=saved.mode==='local'?'local':'ai';level=['easy','medium','hard'].includes(saved.level)?saved.level:'medium';bot=BOTS.find(b=>b.id===saved.bot)||null;assisted=Boolean(saved.assisted);sessionId=typeof saved.sessionId==='string'?saved.sessionId:sessionId;
@@ -82,11 +84,13 @@ function render(animate=false) {
   }
   $('#role-w').textContent=mode==='ai'?'VOUS':'JOUEUR 1';$('#role-b').textContent=mode==='ai'?(bot?bot.name.toUpperCase():'ORDINATEUR'):'JOUEUR 2';
   $('#level-label').hidden=mode!=='ai';document.body.classList.toggle('busy',!human()&&!game.winner);
-  $('#status').textContent=game.notice;
+  $('#status').textContent=diceRolling?'Lancer des dés en cours…':diceRollError||game.notice;
   $('#turn-caption').textContent=game.winner?'FIN DE PARTIE':game.phase==='opening'?'LE PREMIER LANCER':`${sideName(game.turn).toUpperCase()} · TOUR ${game.ply+1}`;
-  $('#instruction').textContent=fleetBusy()?(fleetLoading?'Chargement de la citadelle et de ses pièces…':'Le mouvement se termine sur le plateau…'):game.winner?'Recommencez une partie pour une nouvelle stratégie.':!human()?'L’ordinateur prépare son prochain coup…':game.phase==='opening'?'Un dé pour chaque joueur. Le plus haut commence.':game.phase==='roll'?'Lancez les deux dés. Ils se partagent entre les deux jeux.':inCheck(game.chess,game.turn)?(available.some(a=>a.rescue)?'Parade royale : choisissez une défense. Elle consomme tous les dés.':'Votre roi est en échec : défendez-le avant toute autre action.'):'Sélectionnez une pièce ou un pion, puis une destination éclairée.';
-  const rollButton=$('#roll');rollButton.disabled=!human()||!['opening','roll'].includes(game.phase);
-  rollButton.textContent=game.phase==='opening'?'Lancer pour commencer':game.phase==='play'?'Jouez les dés':'Lancer les dés';
+  $('#instruction').textContent=diceRolling?'Les dés roulent sur le plateau…':fleetBusy()?(fleetLoading?'Chargement de la citadelle et de ses pièces…':'Le mouvement se termine sur le plateau…'):game.winner?'Recommencez une partie pour une nouvelle stratégie.':!human()?'L’ordinateur prépare son prochain coup…':game.phase==='opening'?'Un dé pour chaque joueur. Le plus haut commence.':game.phase==='roll'?'Lancez les deux dés. Ils se partagent entre les deux jeux.':inCheck(game.chess,game.turn)?(available.some(a=>a.rescue)?'Parade royale : choisissez une défense. Elle consomme tous les dés.':'Votre roi est en échec : défendez-le avant toute autre action.'):'Sélectionnez une pièce ou un pion, puis une destination éclairée.';
+  if(diceRollError)$('#instruction').textContent=diceRollError;
+  const rollButton=$('#roll');rollButton.disabled=fleetBusy()||(!human()&&!diceRollError)||!['opening','roll'].includes(game.phase);
+  rollButton.textContent=diceRolling?'Lancer en cours…':game.phase==='opening'?'Lancer pour commencer':game.phase==='play'?'Jouez les dés':'Lancer les dés';
+  if(diceRollError)rollButton.textContent='Relancer les dés';
   $('#dice').innerHTML=(game.dice.length?game.dice:[3,5]).map((v,i)=>`<button class="die-button ${selectedDice.includes(i)?'selected':''} ${animate?'rolling':''}" data-die="${i}" ${!human()||game.phase!=='play'||game.used[i]?'disabled':''} aria-label="Dé ${i+1} : ${v}${game.used[i]?', utilisé':''}" aria-pressed="${selectedDice.includes(i)}">${cube(v)}</button>`).join('');
   const legal=filtered().filter(matchesSource),info=selected?`${selected.type==='chess'?pieceName[game.chess.board[selected.from]?.[1]]+' '+squareName(selected.from):selected.from==='bar'?'Pion sur la barre':'Pointe '+(selected.from+1)} · ${new Set(legal.map(a=>a.to)).size} destination(s) disponible(s).`:selectedDice.length?`Dés sélectionnés : ${selectedDice.map(i=>game.dice[i]).join(' + ')}. Choisissez une pièce ou un pion.`:'Un roi à mater. Quinze pions à faire sortir. À vous de choisir.';
   $('#selection-info').textContent=info;$('#clear-selection').disabled=fleetBusy()||(!selected&&!selectedDice.length);$('#hint').disabled=!human()||game.phase!=='play';
@@ -98,10 +102,15 @@ function render(animate=false) {
   if(assisted&&!training){const a=filtered().find(matchesSource);$('#match-guidance-text').textContent=a?actionExplanation(game,a):game.phase==='opening'?'Le plus haut dé détermine le premier joueur. Vous aurez ensuite les deux valeurs pour votre premier tour.':game.phase==='roll'?'Lancez les dés, puis choisissez entre l’échiquier et la course.':inCheck(game.chess,game.turn)?'Le roi est prioritaire. Répondez à l’échec avant de jouer la course.':'Explorez les deux plateaux. Cliquez « Un conseil » pour comparer les variantes et comprendre le meilleur coup trouvé.';}
   coach?.update(feedback);
   $('#mode').disabled=Boolean(training)||fleetBusy();$('#level').disabled=Boolean(training)||fleetBusy();$('#thinking-time').disabled=fleetBusy();
+  $('#fleet-toggle').disabled=diceRolling;
   if(fleetBusy())for(const control of document.querySelectorAll('#learning-panel button'))control.disabled=true;
   $('#fleet-container').setAttribute('aria-busy',String(fleetBusy()));
-  for(const button of document.querySelectorAll('[data-camera]'))button.disabled=fleetLoading||!fleet.active;
-  if(fleetEnabled)$('#fleet-status').textContent=fleetLoading?'Préparation du plateau 3D…':fleetBusy()?'Animation du mouvement en cours.':game.winner?game.notice:selected?info:'Choisissez une pièce. Les destinations possibles s’illuminent.';
+  for(const button of document.querySelectorAll('[data-camera]')){
+   button.disabled=diceRolling||fleetLoading||!fleet.active;
+   const camera=$('.fleet-mount')?.dataset.fleetCamera;if(camera)button.setAttribute('aria-pressed',String(button.dataset.camera===camera));
+  }
+  $('#fleet-accessible-toggle').disabled=diceRolling;
+  if(fleetEnabled)$('#fleet-status').textContent=diceRolling?'Les dés roulent. Leurs faces au repos donneront le résultat.':fleetLoading?'Préparation du plateau 3D…':fleetBusy()?'Animation du mouvement en cours.':game.winner?game.notice:selected?info:'Choisissez une pièce. Les destinations possibles s’illuminent.';
   if(!fleetLoading&&!rendererBusy)fleet.sync();
   save();
 }
@@ -112,6 +121,7 @@ async function commitAction(id,report=null) {try{
  if(fleetBusy())return;
  const accepted=available.find(a=>a.id===id);
  if(!accepted)return;
+ clearDiceVisuals();
  const before=game;
  normalBubble.hide();coach?.close();
  if(training){const result=attemptTraining(training,id);training=result.session;game=training.game;feedback=result.message;selected=null;selectedDice=[];
@@ -159,8 +169,44 @@ $('#dice').addEventListener('click',event=>{
   if(selectedDice.includes(i))selectedDice=selectedDice.filter(n=>n!==i);else selectedDice=selectedDice.length>=2?[i]:[...selectedDice,i];
   render();
 });
-function throwDice(){return [1+Math.floor(Math.random()*6),1+Math.floor(Math.random()*6)];}
-$('#roll').addEventListener('click',()=>{if(!human()||!['opening','roll'].includes(game.phase))return;try{cancelHint();game=roll(game,throwDice());wood.play('dice');selected=null;selectedDice=[];render(true);scheduleAI();}catch(e){$('#instruction').textContent=e.message;}});
+function clearDiceVisuals(){diceOverlay?.dispose();diceOverlay=null;fleet.clearDice();}
+function cancelRoll(){rollSerial++;rollAbort?.abort();rollAbort=null;diceRolling=false;diceRollError='';clearDiceVisuals();document.body.dataset.diceState='idle';}
+async function performRoll(){
+ if(fleetBusy()||training||invalidTraining||!['opening','roll'].includes(game.phase))return;
+ cancelHint();cancelAI();clearDiceVisuals();
+ const token=++rollSerial,before=game,controller=new AbortController();rollAbort=controller;diceRolling=true;diceRollError='';
+ document.body.dataset.diceState='rolling';selected=null;selectedDice=[];render();
+ let error=null,committed=false,lastImpact=-Infinity;
+ try{
+  const result=await simulateRoll({obstacles:boardObstacles(before.chess.board)},{signal:controller.signal});
+  if(token!==rollSerial||controller.signal.aborted||game!==before)return;
+  const onCollision=hit=>{const now=performance.now();if(now-lastImpact>90){lastImpact=now;wood.play('dice',Math.max(-.7,Math.min(.7,(hit.dice[0]||0)-.5)));}};
+  let completed;
+  if(fleet.active&&!document.body.classList.contains('fleet-accessible'))completed=await fleet.animateDice({result,signal:controller.signal,onCollision});
+  else{
+   try{
+    const {createDiceOverlay}=await import('./dice-visuals.mjs');
+    if(token!==rollSerial||controller.signal.aborted)return;
+    const anchor=$('.chess-frame');anchor.style.position='relative';focusBoard('chess','instant');
+    diceOverlay=createDiceOverlay(anchor);
+    completed=await diceOverlay.play(result,{signal:controller.signal,reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches,onCollision});
+   }catch(renderError){
+    if(renderError.name==='AbortError')throw renderError;
+    // A graphics failure does not invent a different roll: use the settled simulation.
+    diceOverlay?.dispose();diceOverlay=null;completed=true;
+   }
+  }
+  if(!completed||token!==rollSerial||controller.signal.aborted||game!==before)return;
+  game=roll(before,result.values);committed=true;
+  $('#dice').dataset.physicsValues=result.values.join(',');$('#dice').dataset.physicsEngine='cannon-es';
+  document.body.dataset.diceState='settled';
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)wood.play('dice');
+ }catch(e){if(e.name!=='AbortError')error=e;}
+ finally{
+  if(token===rollSerial){diceRolling=false;rollAbort=null;diceRollError=error?error.message+' Cliquez sur « Relancer les dés ».':'';render();if(error){document.body.dataset.diceState='error';}else if(committed)scheduleAI();}
+ }
+}
+$('#roll').addEventListener('click',()=>{if(human()||diceRollError)void performRoll();});
 function scheduleAI() {
   cancelAI();if(fleetBusy()||document.hidden||training||invalidTraining||mode!=='ai'||game.turn!=='b'||game.phase==='opening'||game.winner)return;
   const token=generation,revision=game.revision;
@@ -168,7 +214,7 @@ function scheduleAI() {
     if(fleetBusy()||token!==generation||revision!==game.revision)return;
     timer=null;
     try {
-      if(game.phase==='roll'){game=roll(game,throwDice());wood.play('dice');render(true);scheduleAI();}
+      if(game.phase==='roll'){await performRoll();}
       else if(bot?.rank>=5||(!bot&&level==='hard')){
         analysisPanel.busy((bot?.name||'Le maître')+' examine les variantes',true);
         const timeMs=bot?.id==='octave'?Math.min(1800,+$('#thinking-time').value):+$('#thinking-time').value;
@@ -195,10 +241,11 @@ $('#clear-selection').addEventListener('click',()=>{if(fleetBusy())return;select
 $('#hint').addEventListener('click',()=>{if(training){$('#training-hint')?.click();return;}requestAnalysis();});
 $('#rules-button').addEventListener('click',()=>$('#rules-dialog').showModal());$('#close-rules').addEventListener('click',()=>$('#rules-dialog').close());
 $('#new-game').addEventListener('click',()=>$('#new-dialog').showModal());$('#cancel-new').addEventListener('click',()=>$('#new-dialog').close());
-$('#confirm-new').addEventListener('click',()=>{cancelHint();cancelAI();wood.stop();normalBubble.hide();sessionId=globalThis.crypto?.randomUUID?.()||('local-'+Date.now());game=createGame();selected=null;selectedDice=[];promotions=[];$('#new-dialog').close();$('#promotion-dialog').close();if(fleetEnabled&&fleetBusy())setFleetEnabled(true);render();});
+$('#confirm-new').addEventListener('click',()=>{cancelRoll();cancelHint();cancelAI();wood.stop();normalBubble.hide();sessionId=globalThis.crypto?.randomUUID?.()||('local-'+Date.now());game=createGame();selected=null;selectedDice=[];promotions=[];$('#new-dialog').close();$('#promotion-dialog').close();if(fleetEnabled&&fleetBusy())setFleetEnabled(true);render();});
 $('#promotion-choices').addEventListener('click',event=>{const button=event.target.closest('[data-promote]');if(!button)return;const a=promotions.find(a=>a.promotion===button.dataset.promote);$('#promotion-dialog').close();if(a)commitAction(a.id);promotions=[];});
 $('#view-button').addEventListener('click',event=>{const flat=document.body.classList.toggle('flat');event.target.textContent=flat?'Vue à plat':'Vue en relief';event.target.setAttribute('aria-pressed',String(!flat));});
 function accessibleBoard(show=true){
+ if(diceRolling&&show!==document.body.classList.contains('fleet-accessible'))return;
  document.body.classList.toggle('fleet-accessible',show);
  $('#fleet-accessible-toggle').setAttribute('aria-expanded',String(show));
  $('#fleet-accessible-toggle').textContent=show?'Masquer le plateau accessible':'Afficher le plateau accessible · clavier / lecteur d’écran';
@@ -209,6 +256,7 @@ function fleetFailure(){
  $('#fleet-fallback').hidden=false;
 }
 async function setFleetEnabled(enabled,updateURL=true){
+ if(diceRolling)cancelRoll();else clearDiceVisuals();
  const token=++fleetLoadSerial;cancelAI();cancelHint();
  detachFleetContext();detachFleetContext=()=>{};
  fleetEnabled=enabled;fleetLoading=enabled;rendererBusy=false;fleet.dispose();
@@ -239,12 +287,13 @@ $('#fleet-toggle').addEventListener('click',()=>void setFleetEnabled(!fleetEnabl
 $('#fleet-accessible-toggle').addEventListener('click',()=>accessibleBoard(!document.body.classList.contains('fleet-accessible')));
 $('#board-scroll').addEventListener('focusin',()=>{if(fleetEnabled)accessibleBoard(true);});
 function setFleetCamera(mode){
- if(!fleet.active)return;fleet.setCamera(mode);
+ if(!fleet.active||diceRolling)return;fleet.setCamera(mode);
  for(const item of document.querySelectorAll('[data-camera]'))item.setAttribute('aria-pressed',String(item.dataset.camera===mode));
 }
 for(const button of document.querySelectorAll('[data-camera]'))button.addEventListener('click',()=>setFleetCamera(button.dataset.camera));
 window.addEventListener('resize',()=>fleet.resize());
 function focusBoard(which,behavior='smooth') {
+  document.dispatchEvent(new CustomEvent('match:focus-board',{detail:{which}}));
   if(fleetEnabled){accessibleBoard(true);setFleetCamera(which);}
   const scroll=$('#board-scroll'),target=which==='chess'?$('.chess-frame'):$('#track-'+which),r=target.getBoundingClientRect(),s=scroll.getBoundingClientRect();
   scroll.scrollTo({left:scroll.scrollLeft+r.left-s.left-(scroll.clientWidth-r.width)/2,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':behavior});
@@ -253,6 +302,7 @@ for(const button of document.querySelectorAll('[data-focus]'))button.addEventLis
 function highlight(a){selected={type:a.type,from:a.from};selectedDice=game.dice.flatMap((_,i)=>a.mask&(1<<i)?[i]:[]);render();}
 function focusTarget(selector){
  const point=/^#point-(\d+)$/.exec(selector);if(point)focusBoard(+point[1]>=6&&+point[1]<=17?'left':'right','auto');
+ else if(selector==='#track-left'||selector==='#track-right')focusBoard(selector==='#track-left'?'left':'right','auto');
  else if(selector.startsWith('#sq-'))focusBoard('chess','auto');
  const el=document.querySelector(selector);el?.scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'});
 }
@@ -265,11 +315,11 @@ if(training){
 }else if(invalidTraining){
  $('#match-context').textContent='EXERCICE INTROUVABLE';$('#learning-panel').hidden=false;$('#learning-panel').innerHTML='<h2>Ce contenu n’existe pas.</h2><p>Retrouvez les exercices disponibles dans le salon.</p><a href="./index.html#puzzles">Retour aux problèmes →</a>';document.body.classList.add('training');
 }else{$('#match-context').textContent=bot?'CONTRE '+bot.name.toUpperCase()+' · '+(assisted?'ACCOMPAGNÉ':'DÉFI'):mode==='local'?'DEUX JOUEURS · MÊME ÉCRAN':'PARTIE LIBRE';}
-window.addEventListener('pagehide',()=>{cancelHint();cancelAI();wood.stop();normalBubble.hide();coach?.close();fleetLoadSerial++;detachFleetContext();detachFleetContext=()=>{};fleetLoading=false;rendererBusy=false;fleet.dispose();$('#fleet-container').replaceChildren();});
-document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelHint();cancelAI();wood.stop();}else scheduleAI();});
+window.addEventListener('pagehide',()=>{cancelRoll();cancelHint();cancelAI();wood.stop();normalBubble.hide();coach?.close();fleetLoadSerial++;detachFleetContext();detachFleetContext=()=>{};fleetLoading=false;rendererBusy=false;fleet.dispose();$('#fleet-container').replaceChildren();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelRoll();cancelHint();cancelAI();wood.stop();}else{render();scheduleAI();}});
 window.addEventListener('pageshow',()=>{if(fleetEnabled&&!fleet.active&&!fleetLoading)setFleetEnabled(true);else scheduleAI();});
 analysisPanel=createAnalysisPanel($('#analysis-panel'),{
- onChoose:(a,r)=>{if(human()&&r.key===analysisKey(game)){const found=available.find(m=>m.id===a.id);if(found){highlight(found);focusTarget(sourceTarget(found,game.turn));}}},
+ onChoose:(a,r)=>{if(human()&&r.key===analysisKey(game)){const found=available.find(m=>m.id===a.id);if(found){analysisPanel.hide();highlight(found);focusTarget(sourceTarget(found,game.turn));}}},
  onRequest:requestAnalysis,onCancel:()=>{
   const computerWasThinking=aiEngine.busy;cancelHint(false);
    if(computerWasThinking){cancelAI();if(!fleetBusy()&&!game.winner&&game.turn==='b'&&mode==='ai'&&game.phase==='play'){const id=bot?chooseBot(game,bot.id):choose(game,'hard');if(id)commitAction(id);}}

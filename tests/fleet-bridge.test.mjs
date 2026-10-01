@@ -107,3 +107,13 @@ test('the untouched 2D path has no renderer or animation delay',async()=>{
   bridge.sync();bridge.resize();bridge.setCamera('overview');
   assert.equal(await bridge.animate({before:{},after:{},action:{}}),false);assert.equal(bridge.busy,false);
 });
+
+test('dice playback shares the interaction lock and preserves cancellation',async()=>{
+  const game=createGame(),gate=deferred(),calls=[],bridge=createFleetBridge({getState:()=>({game})});
+  bridge.attach({sync(){},dispose(){},animateDice(payload){calls.push(payload);return gate.promise;}});
+  const payload={result:{values:[2,5]}},pending=bridge.animateDice(payload);
+  assert.equal(bridge.busy,true);assert.equal(calls[0],payload);
+  await assert.rejects(bridge.animate({}),/déjà en cours/);
+  gate.resolve(false);assert.equal(await pending,false);assert.equal(bridge.busy,false);
+  assert.equal(game.revision,0,'presentation cannot commit dice to the rules engine');
+});

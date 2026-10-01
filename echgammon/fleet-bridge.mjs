@@ -15,16 +15,17 @@ export function createFleetBridge({getState,onBusy=()=>{},onError=()=>{}}) {
     try{old?.dispose();}finally{setBusy(false);}
   }
   function attach(next){dispose();renderer=next;sync();}
-  async function animate(transition){
+  async function run(method,payload){
     if(!renderer)return false;
     if(busy)throw new Error('Une animation est déjà en cours.');
     const current=renderer,token=++serial;
     setBusy(true);
-    try{await current.animate(transition);return token===serial;}
+    try{const result=await current[method](payload);return token===serial&&result!==false;}
     catch(error){if(token===serial)onError(error);return false;}
     finally{if(token===serial){setBusy(false);sync();}}
   }
-  return {attach,dispose,sync,animate,get busy(){return busy;},get active(){return Boolean(renderer);},
+  return {attach,dispose,sync,animate:transition=>run('animate',transition),animateDice:payload=>run('animateDice',payload),
+    clearDice(){renderer?.clearDice?.();},get busy(){return busy;},get active(){return Boolean(renderer);},
     resize(){try{renderer?.resize();}catch(error){onError(error);}},
     setCamera(mode){try{renderer?.setCamera?.(mode);}catch(error){onError(error);}}};
 }

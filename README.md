@@ -6,11 +6,13 @@ Ouvrir **`play.html?view=fleet`** pour jouer sur la citadelle nautique. Les deux
 
 Les boutons Vue d'ensemble / Échiquier / Piste gauche / Piste droite cadrent la zone souhaitée. Cliquer une pièce puis une destination éclairée ; les dés déterminent les coups disponibles. Glisser pour faire tourner la scène et utiliser la molette ou le pincement pour zoomer. La vue 2D et les commandes accessibles restent disponibles. Le premier chargement récupère les modèles locaux au site, puis le navigateur les met en cache.
 
-Documentation : [intégration](docs/royal-fleet-integration.md), [modèles et effets](docs/royal-fleet-art.md). Vérification WebGL : `python -X utf8 tests/fleet.browser.py`. Les tests HTTP utilisent un serveur local qui fournit explicitement le bon type MIME des modules JavaScript sous Windows.
+Les jets de dés utilisent une simulation physique locale (Cannon-es) : chutes, rotations, rebonds et collisions sur l'échiquier. Les faces au repos donnent les valeurs jouées, pour les humains comme pour les bots. Le lancer est visible dans les deux présentations. Le plateau et ses commandes s'adaptent à la hauteur de l'écran ; l'aide, les options et le journal restent accessibles dans des panneaux sur téléphone.
+
+Documentation : [intégration](docs/royal-fleet-integration.md), [modèles et effets](docs/royal-fleet-art.md), [cadrage et dés physiques](docs/viewport-and-dice.md). Vérification WebGL : `python -X utf8 tests/fleet.browser.py`. Les tests HTTP utilisent un serveur local qui fournit explicitement le bon type MIME des modules JavaScript sous Windows.
 
 Jeu web statique adapté de l'affiche fournie par l'utilisateur : échiquier 8×8 avec 32 pièces, pistes latérales totalisant 24 pointes, 15 pions de course par couleur et deux dés partagés. Gagnez par mat ou en sortant les 15 pions. Mode deux joueurs sur le même appareil, six bots de personnalités et de niveaux différents, problèmes tactiques et académie guidée.
 
-L'interface utilise un coffret en perspective CSS, des pièces SVG avec relief, des pions empilés et des dés CSS 3D. Aucun service distant, compte, clé ou dépendance n'est requis pendant la partie. Sur téléphone, les boutons Piste gauche / Échiquier / Piste droite et le défilement horizontal donnent accès à tout le plateau.
+La présentation classique utilise un coffret en perspective CSS, des pièces SVG avec relief et des pions empilés. La console conserve des dés lisibles en CSS et le jet est rendu en 3D. Aucun service distant, compte ou clé n'est requis pendant la partie ; les bibliothèques de rendu et de physique sont servies avec le site. Sur téléphone, les onglets Piste gauche / Échiquier / Piste droite donnent accès aux trois sections du plateau.
 
 ## Le Salon — édition 4.0
 

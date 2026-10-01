@@ -2,7 +2,8 @@
 
 Ouvrir `play.html?view=fleet` pour charger la citadelle et ses figurines. Le bouton
 « Revenir au plateau 2D » change la présentation de la partie en cours. Une URL
-sans `view=fleet` conserve le plateau historique et ne charge aucun module 3D.
+sans `view=fleet` conserve le plateau historique ; le petit rendu 3D des dés
+est chargé uniquement au premier lancer.
 Le paramètre se combine avec `bot`, `mode`, `lesson`, `puzzle` et `fresh`.
 
 ## Une seule partie, les règles existantes
@@ -51,7 +52,7 @@ ignorés. Les changements de caméra n'agissent jamais sur les règles.
 
 Les 64 cases et 24 pointes DOM restent présentes avec leurs noms accessibles,
 coordonnées et commandes clavier. « Afficher le plateau accessible » les déplie
-sous la scène ; un focus clavier ou un guide qui les cible les affiche également.
+à la place de la scène ; un focus clavier ou un guide qui les cible les affiche également.
 La barre, les sorties, les dés, les règles et les contrôles de partie restent
 des boutons HTML. Le plateau 3D ne remplace donc pas les commandes accessibles.
 

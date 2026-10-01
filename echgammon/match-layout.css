@@ -1,0 +1,193 @@
+/* The match is a workspace; secondary reading belongs in scrollable drawers. */
+html { height:100%; }
+body { height:100dvh; min-height:0; overflow:hidden; }
+body .salon, body.training .salon, body.fleet-mode .salon {
+  width:100%; max-width:1920px; height:100dvh; min-height:0; margin:auto;
+  padding:8px max(16px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));
+  display:flex; flex-direction:column; gap:6px;
+}
+.match-header { display:flex; align-items:center; justify-content:space-between; gap:14px; min-height:36px; flex:none; }
+.match-header .match-nav { display:flex; align-items:center; gap:18px; min-width:0; margin:0; padding:0; border:0; }
+.match-nav h1 { margin:0; font:normal 23px Georgia,serif; color:var(--gold); letter-spacing:.4px; }
+.match-nav a { white-space:nowrap; font:12px system-ui,sans-serif; }
+#match-context { font-size:11px; letter-spacing:.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.match-actions { display:flex; gap:7px; flex:none; }
+.match-actions button { min-height:34px; padding:6px 10px; font:12px system-ui,sans-serif; }
+#match-quick-fleet { display:none; }
+.salon > .tools { flex:none; min-height:40px; gap:12px; padding:5px 0; }
+.salon > .tools label { display:flex; align-items:center; gap:7px; font-size:10px; letter-spacing:.5px; }
+.salon > .tools select { padding:6px 22px 6px 8px; }
+.salon > .tools .quiet { padding:6px; font-size:12px; }
+.salon > .sound-tools { flex:none; gap:12px; margin:0; padding:0; min-height:30px; font-size:11px; }
+.salon > .sound-tools button, .salon > .sound-tools select { padding:4px 7px; }
+.salon > .match-layout, body.training .match-layout { flex:1; min-height:0; display:grid; grid-template-columns:minmax(0,1fr); gap:16px; align-items:stretch; }
+.training .salon > .tools { margin-bottom:0; }
+.training .salon > .tools label { display:none; }
+body.training:not(.match-compact) .match-layout { grid-template-columns:minmax(0,1fr) 280px; }
+.match-board { min-width:0; min-height:0; display:flex; flex-direction:column; gap:6px; }
+.players { flex:none; padding:0 4px; min-height:38px; gap:8px; }
+.player { gap:8px; min-width:0; }
+.player h2 { font-size:17px; margin:0 0 2px; }
+.player h2 small { font-size:9px; letter-spacing:.4px; margin-left:6px; }
+.player p { font-size:10px; line-height:1.4; }
+.player-medallion { width:31px; height:31px; font-size:25px; flex:none; }
+.play-surface { min-width:0; min-height:0; flex:1; display:flex; flex-direction:column; position:relative; }
+.board-scroll { flex:1; min-width:0; min-height:0; margin:0; padding:6px 5px 12px; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+.cabinet-stage { width:var(--cabinet-width,100%); max-width:100%; padding:0; flex:none; }
+.cabinet { min-width:0; width:100%; gap:12px; padding:18px 16px 26px; }
+.cabinet-sign { bottom:3px; padding:2px 10px; }
+.cabinet-sign strong { font-size:9px; }
+.cabinet-sign em { display:none; }
+.point-number { top:-14px; font-size:10px; }
+.point.up .point-number { bottom:-14px; }
+.checker { top:calc(3px + var(--i)*var(--checker-step,16px)); }
+.point.up .checker { bottom:calc(3px + var(--i)*var(--checker-step,16px)); }
+.stack-count { top:calc(8px + 5*var(--checker-step,16px)); }
+.point.up .stack-count { bottom:calc(8px + 5*var(--checker-step,16px)); }
+.race-rails, .fleet-mode .race-rails { flex:none; gap:14px; margin:0; flex-direction:row; }
+.rail { gap:6px; }
+.bar-button { min-width:0; min-height:32px; padding:3px 7px; font-size:11px; }
+.bar-button b { width:19px; height:19px; margin-left:4px; }
+.off-button { min-height:32px; padding:3px 8px; gap:6px; font-size:11px; }
+.off-coins { min-width:0; overflow:hidden; }
+.off-coins i { height:12px; min-width:3px; }
+.console, .training .console { flex:none; padding:9px 14px; gap:16px; min-height:92px; }
+.turn-information { text-align:left; }
+#turn-caption { font-size:10px; letter-spacing:1px; }
+#status { margin:3px 0; font-size:19px; line-height:1.25; }
+#instruction { font-size:12px; line-height:1.4; margin:3px 0 0; color:#c5b18e; }
+.dice-station { min-width:230px; gap:15px; }
+.gold-button { min-height:38px; padding:9px 13px; font-size:12px; }
+.assistant-bar { flex:none; gap:10px; padding:0 3px; min-height:28px; font-size:11px; flex-wrap:nowrap; }
+.assistant-bar span { min-width:0; }
+.assistant-bar .text-button { font-size:12px; min-height:28px; }
+.salon > footer { display:none; }
+
+/* The teaching panel never increases the height of the board. */
+body:not(.match-compact) #learning-panel { position:static; order:initial; width:auto; min-height:0; max-height:100%; overflow:auto; padding:16px; scrollbar-width:thin; }
+body:not(.match-compact) #learning-panel .training-header,
+body:not(.match-compact) #learning-panel .training-objective { float:none; width:auto; }
+body:not(.match-compact) #learning-panel h2 { font-size:22px; margin:8px 0; }
+body:not(.match-compact) #learning-panel .training-objective { font-size:13px; line-height:1.55; margin:12px 0; }
+body:not(.match-compact) #learning-panel .training-actions { display:flex; flex-direction:column; margin-top:12px; gap:7px; }
+body:not(.match-compact) #learning-panel .training-actions button { min-height:36px; font-size:12px; }
+
+/* A single flexible 3D canvas occupies the same play surface as the 2D board. */
+.fleet-presentation { flex:1; min-height:0; margin:0; display:flex; flex-direction:column; }
+.fleet-heading { padding:7px 12px; flex:none; }
+.fleet-heading h2 { font-size:18px; }
+.fleet-heading p, .fleet-edition { display:none; }
+.fleet-container { flex:1; min-height:0; height:auto; max-height:none; }
+.fleet-cameras { flex:none; padding:5px 8px 0; gap:6px; display:flex; }
+.fleet-cameras button { flex:1; min-height:30px; padding:5px; font-size:11px; }
+.fleet-help, .fleet-status { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); margin:0; padding:0; }
+.fleet-accessible-toggle { flex:none; margin:3px auto; padding:5px 8px; font-size:11px; min-height:28px; }
+.fleet-mode:not(.fleet-accessible) .board-scroll { flex:none; }
+.fleet-mode.fleet-accessible .fleet-presentation { flex:none; order:3; border:0; background:none; }
+.fleet-mode.fleet-accessible .fleet-heading,
+.fleet-mode.fleet-accessible .fleet-container,
+.fleet-mode.fleet-accessible .fleet-cameras { display:none; }
+.fleet-mode.fleet-accessible .board-scroll { position:relative; width:auto; height:auto; clip-path:none; margin:0; padding:6px 5px 12px; overflow:hidden; }
+.fleet-fallback { flex:none; font:12px/1.4 system-ui,sans-serif; margin:0; padding:5px 8px; }
+
+/* Drawers use native dialog focus management; every secondary control is reachable. */
+.match-drawer { color:var(--cream); color-scheme:dark; background:#251b13; border:1px solid #ac824c; border-radius:9px; padding:20px; width:min(620px,calc(100% - 24px)); max-height:calc(100dvh - 24px); overflow:auto; box-shadow:0 15px 90px #000c; }
+.match-drawer::backdrop { background:#0b0806c9; backdrop-filter:blur(4px); }
+.drawer-heading { display:flex; align-items:center; justify-content:space-between; gap:15px; margin-bottom:14px; }
+.drawer-heading h2 { margin:0; font:normal 24px Georgia,serif; }
+.drawer-heading button { padding:8px 12px; font:13px system-ui,sans-serif; }
+.match-drawer .tools { flex-wrap:wrap; gap:14px; margin-bottom:15px; }
+.match-drawer .tools label { flex:1 1 45%; min-width:0; font-size:11px; }
+.match-drawer .tools select { width:100%; max-width:none; font-size:13px; }
+.match-drawer .tools .quiet { flex:1 1 40%; min-height:40px; font-size:13px; border-color:var(--line); }
+.match-drawer .tool-spacer { display:none; }
+.match-drawer .sound-tools { justify-content:flex-start; padding:12px 0; gap:14px; font-size:13px; }
+.match-drawer .sound-tools button,.match-drawer .sound-tools select { font-size:13px; padding:8px; }
+.match-drawer .journal { margin:14px 0; font-size:13px; }
+.match-drawer .journal summary { font-size:14px; }
+.match-drawer .journal ol { max-height:none; }
+.match-drawer footer { margin-top:16px; font-size:11px; }
+.academy-link { display:inline-block; margin:12px 0; color:var(--gold); font:13px system-ui,sans-serif; }
+.match-drawer #learning-panel { position:static; padding:0; border:0; width:auto; }
+.match-drawer #learning-panel .training-header,.match-drawer #learning-panel .training-objective { width:auto; float:none; }
+.match-drawer #learning-panel h2 { font-size:24px; }
+.match-drawer #learning-panel .training-objective { font-size:14px; line-height:1.6; }
+.match-drawer .training-actions { display:flex; flex-direction:column; }
+.match-drawer .training-actions button { font-size:13px; min-height:40px; }
+.match-drawer .match-guidance { margin:0 0 14px; padding:12px; font-size:13px; }
+.analysis-panel { position:fixed; inset:8% max(20px,calc((100vw - 1100px)/2)); z-index:40; max-height:84dvh; overflow:auto; margin:0; background:#251a10; box-shadow:0 0 0 100vmax #0c0908cc; }
+
+/* Compact mode replaces horizontal panning with full-size board sections. */
+body.match-compact .salon { padding:6px max(8px,env(safe-area-inset-right)) max(6px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left)); gap:5px; }
+.match-compact .match-header { min-height:36px; gap:7px; }
+.match-compact .match-header .match-nav { gap:10px; }
+.match-compact .match-nav h1 { font-size:18px; }
+.match-compact #match-context { display:none; }
+.match-compact .match-actions { gap:5px; }
+.match-compact .match-actions button { font-size:12px; padding:6px 8px; }
+.match-compact #match-quick-fleet { display:block; }
+.match-compact .match-board { gap:5px; }
+.match-compact .player h2 { font-size:15px; }
+.match-compact .player h2 small { font-size:8px; margin-left:4px; }
+.match-compact .player p { font-size:10px; }
+.match-compact .players, .training.match-compact .players { min-height:38px; padding:0; }
+.match-compact .player-medallion { display:none; }
+.match-compact .player .separator { margin:0 3px; }
+.match-compact .versus { display:none; }
+.match-compact .board-navigation,
+.match-compact.fleet-mode.fleet-accessible .board-navigation { display:flex; flex:none; margin:0 0 4px; gap:5px; }
+.match-compact.fleet-mode:not(.fleet-accessible) .board-navigation { display:none; }
+.match-compact .board-navigation span { display:none; }
+.match-compact .board-navigation button { flex:1; min-height:32px; padding:5px; border:1px solid var(--line); font:12px system-ui,sans-serif; }
+.match-compact .board-navigation button[aria-pressed=true] { background:#6b4b28; color:#fff1ce; border-color:#c7a26b; }
+.match-compact .cabinet { grid-template-columns:1fr; gap:0; padding:17px 12px 24px; transform:none; }
+.match-compact .cabinet .track,.match-compact .cabinet .chess-frame { aspect-ratio:1; }
+.match-compact[data-match-pane=chess] .cabinet .track,
+.match-compact[data-match-pane=left] .cabinet .chess-frame,
+.match-compact[data-match-pane=left] #track-right,
+.match-compact[data-match-pane=right] .cabinet .chess-frame,
+.match-compact[data-match-pane=right] #track-left { display:none; }
+.match-compact .board-scroll { padding:3px 3px 10px; }
+.match-compact .race-rails { gap:4px; flex-direction:column; }
+.match-compact .rail { gap:5px; }
+.match-compact .bar-button { min-width:110px; }
+.match-compact .off-button { flex:1; }
+.match-compact .off-coins i { width:4px; }
+.match-compact .console { flex-direction:column; align-items:stretch; padding:8px 10px; gap:6px; min-height:0; }
+.match-compact #turn-caption { font-size:9px; }
+.match-compact #status { font-size:17px; margin:2px 0; }
+.match-compact #instruction { font-size:12px; line-height:1.4; }
+.match-compact .dice-station { min-width:0; justify-content:center; gap:14px; }
+.match-compact .dice { min-height:43px; gap:8px; }
+.match-compact .gold-button { min-height:36px; }
+.match-compact .assistant-bar { flex-wrap:nowrap; gap:8px; min-height:29px; padding:0; }
+.match-compact #selection-info { display:none; }
+.match-compact .assistant-bar button { flex:1; padding:5px; }
+.match-compact .fleet-heading { padding:5px 9px; }
+.match-compact .fleet-heading h2 { font-size:16px; }
+.match-compact .fleet-cameras { gap:3px; padding:4px 4px 0; }
+.match-compact .fleet-cameras button { font-size:11px; min-height:31px; }
+.match-compact .fleet-accessible-toggle { font-size:10px; }
+@media(max-width:420px) { .match-compact .match-nav h1 { display:none; } }
+@media(max-height:520px) and (min-width:620px) {
+  .match-compact .cabinet { padding:13px 8px 16px; }
+  .match-compact .cabinet-sign { display:none; }
+  .match-compact .match-board { display:grid; grid-template-columns:minmax(0,1fr) 290px; grid-template-rows:34px auto minmax(0,1fr) 30px; gap:5px 10px; }
+  .match-compact .players { grid-column:1/-1; min-height:0; }
+  .match-compact .play-surface { grid-column:1; grid-row:2/5; }
+  .match-compact .race-rails { grid-column:2; grid-row:2; }
+  .match-compact .console { grid-column:2; grid-row:3; justify-content:center; overflow:auto; }
+  .match-compact .assistant-bar { grid-column:2; grid-row:4; }
+  .match-compact .off-coins { display:none; }
+  .match-compact .off-button { justify-content:space-between; }
+  .match-compact .dice-station { flex-wrap:wrap; gap:5px 10px; }
+  .match-compact .dice { min-height:38px; }
+  .match-compact #status { font-size:16px; }
+  /* The exercise objective already appears in #instruction. Keep its live
+     announcement, without repeating a large heading in this short viewport. */
+  .training.match-compact #status { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); margin:0; padding:0; }
+  .training.match-compact #instruction { font-size:14px; }
+  .match-compact .fleet-heading { display:none; }
+  .match-compact .fleet-accessible-toggle { font-size:10px; padding:2px 4px; min-height:22px; }
+}
+@media(prefers-reduced-motion:reduce) { .match-drawer::backdrop { backdrop-filter:none; } }
