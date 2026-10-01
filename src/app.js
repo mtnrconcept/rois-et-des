@@ -1,4 +1,4 @@
-import {createGame,rollActions,legalMoves,entryMoves,applyMove,bearOff,canBearOff} from './engine.js';import{chooseMove}from'./ai.js';
+import {createGame,rollActions,legalMoves,entryMoves,applyMove,bearOff,canBearOff} from './engine.js';import{chooseMove}from'./ai.js';import{normalizeTurn}from'./turn.js';
 const glyph={white:{king:'♔',queen:'♕',rook:'♖',bishop:'♗',knight:'♘'},black:{king:'♚',queen:'♛',rook:'♜',bishop:'♝',knight:'♞'}};
 let game=createGame(),selected=null,actionIndex=0;
 const $=s=>document.querySelector(s),board=$('#board'),dice=$('#dice'),status=$('#status');
@@ -11,8 +11,8 @@ function render(){
 }
 function select(id){if(game.winner||!game.actions.length)return;const p=game.pieces.find(q=>q.id===id);if(!p||p.color!==game.turn)return;selected=id;document.querySelectorAll('.cell').forEach(c=>c.classList.remove('target','capture'));let moves=p.prison?entryMoves(game,p.color,currentDie()):legalMoves(game,id,currentDie());moves.forEach(m=>{const c=[...document.querySelectorAll('.cell')].find(e=>+e.dataset.x===m.x&&+e.dataset.y===m.y);c?.classList.add(m.capture?'capture':'target')})}
 function moveTo(x,y){if(!selected)return;const p=game.pieces.find(q=>q.id===selected),die=currentDie();const moves=p.prison?entryMoves(game,p.color,die):legalMoves(game,selected,die);if(!moves.some(m=>m.x===x&&m.y===y))return;game=applyMove(game,selected,{x,y},die);selected=null;nextAction()}
-function nextAction(){actionIndex++;render();if(actionIndex>=game.actions.length){game.turn=game.turn==='white'?'black':'white';game.actions=[];actionIndex=0;render();setTimeout(aiTurn,400)}}
-$('#roll').onclick=()=>{if(game.actions.length||game.winner)return;game.actions=rollActions([1+Math.floor(Math.random()*6),1+Math.floor(Math.random()*6)]);actionIndex=0;render();if($('#mode').value==='ai'&&game.turn==='black')setTimeout(aiTurn,400)};
-function aiTurn(){if($('#mode').value!=='ai'||game.turn!=='black'||game.winner)return;if(!game.actions.length){game.actions=rollActions([1+Math.floor(Math.random()*6),1+Math.floor(Math.random()*6)]);actionIndex=0;render()}const die=currentDie(),a=chooseMove(game,die,$('#level').value);if(a)game=a.bearOff?bearOff(game,a.pieceId,die):applyMove(game,a.pieceId,a.to,die);nextAction()}
+function nextAction(){const n=normalizeTurn(game,actionIndex+1);game=n.game;actionIndex=n.index;render();if(n.ended)setTimeout(aiTurn,400)}
+$('#roll').onclick=()=>{if(game.actions.length||game.winner)return;game.actions=rollActions([1+Math.floor(Math.random()*6),1+Math.floor(Math.random()*6)]);const n=normalizeTurn(game,0);game=n.game;actionIndex=n.index;render();if($('#mode').value==='ai'&&game.turn==='black')setTimeout(aiTurn,400)};
+function aiTurn(){if($('#mode').value!=='ai'||game.turn!=='black'||game.winner)return;if(!game.actions.length){game.actions=rollActions([1+Math.floor(Math.random()*6),1+Math.floor(Math.random()*6)]);const n=normalizeTurn(game,0);game=n.game;actionIndex=n.index;render();if(n.ended){setTimeout(aiTurn,250);return}}const die=currentDie(),a=chooseMove(game,die,$('#level').value);if(a)game=a.bearOff?bearOff(game,a.pieceId,die):applyMove(game,a.pieceId,a.to,die);nextAction()}
 $('#new').onclick=()=>{game=createGame();selected=null;actionIndex=0;render()};$('#mode').onchange=e=>{$('#levelWrap').style.display=e.target.value==='ai'?'grid':'none';game=createGame();actionIndex=0;render()};$('#rules').onclick=()=>$('#help').showModal();$('#close').onclick=()=>$('#help').close();
 render();
