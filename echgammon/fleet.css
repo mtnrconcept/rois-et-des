@@ -1,0 +1,35 @@
+/* The existing 2D view is untouched until the player chooses the fleet. */
+.fleet-presentation{margin:4px 0 22px;border:1px solid #c7a15f66;border-radius:12px;overflow:hidden;background:#101e25;box-shadow:0 18px 55px #0006,inset 0 1px #f3dba333}
+.fleet-heading{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:20px 24px;background:linear-gradient(110deg,#152933,#0b171f);border-bottom:1px solid #c4a16a44}
+.fleet-heading p{margin:0 0 7px;font:9px system-ui,sans-serif;letter-spacing:2.4px;color:#cfad74}
+.fleet-heading h2{margin:0;color:#f1dfbb;font-size:27px;font-weight:400;letter-spacing:.4px}
+.fleet-edition{font:8px/1.8 system-ui,sans-serif;letter-spacing:1.7px;color:#a5b6b9;text-align:right}
+.fleet-container{width:100%;height:clamp(360px,49vw,680px);position:relative;background:radial-gradient(ellipse at 50% 40%,#234454,#0b1823 75%);overflow:hidden;isolation:isolate}
+.fleet-mount{position:absolute;inset:0;min-width:0;min-height:0}
+.fleet-container canvas{display:block;width:100%;height:100%;touch-action:none;outline-offset:-5px}
+.fleet-container[aria-busy="true"]{cursor:progress}
+.fleet-container[aria-busy="true"]:after{content:'La flotte se met en place…';position:absolute;left:50%;bottom:18px;transform:translateX(-50%);white-space:nowrap;padding:9px 16px;border:1px solid #c6a66b55;border-radius:30px;background:#08131de8;color:#f0dcae;font:11px system-ui,sans-serif;pointer-events:none;z-index:3}
+.fleet-cameras{display:flex;gap:8px;flex-wrap:wrap;padding:15px 20px 6px;justify-content:center}
+.fleet-cameras button{padding:9px 14px;min-height:38px;background:#142932;border-color:#92afba30;color:#c5d5d9;font:11px system-ui,sans-serif}
+.fleet-cameras button[aria-pressed="true"]{background:#c0a16b;color:#152027;border-color:#edcf98}
+.fleet-help{max-width:760px;margin:10px auto 0;padding:0 24px;color:#b8c7ca;font:11px/1.75 system-ui,sans-serif;text-align:center}
+.fleet-status{margin:6px 20px 0;color:#e4c98d;min-height:1.5em;font:11px/1.7 system-ui,sans-serif;text-align:center}
+.fleet-accessible-toggle{display:block;margin:7px auto 17px;padding:8px 14px;border-color:#86a0ab30;background:transparent;color:#c3d1d5;font:10px/1.5 system-ui,sans-serif}
+.fleet-fallback{padding:13px 18px;border:1px solid #caac7260;background:#302b1d;color:#e8d7ae;border-radius:7px;font:12px/1.7 system-ui,sans-serif}
+.fleet-mode{background:radial-gradient(ellipse at 50% 22%,#233841,#121e26 48%,#090f16 88%)}
+.fleet-mode .salon{max-width:1500px}
+.fleet-mode .board-navigation{display:none}
+.fleet-mode:not(.fleet-accessible) #board-scroll{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.fleet-mode.fleet-accessible .board-navigation{display:flex}
+.fleet-mode .player-medallion.ivory{color:#f3ca7c;background:radial-gradient(circle at 35% 30%,#c54d37,#6c181b);border:1px solid #d1aa63}
+.fleet-mode .player-medallion.ebony{color:#f3ca7c;background:radial-gradient(circle at 35% 30%,#2868a0,#102b4e);border:1px solid #d1aa63}
+.fleet-mode .console{background:linear-gradient(115deg,#20313a,#121d26);border-color:#b79a6555}
+.fleet-mode #fleet-toggle{color:#f5d995;border-color:#b2935655}
+.fleet-mode .race-rails{margin-top:6px}
+.fleet-mode .bar-button,.fleet-mode .off-button{background:#14212a}
+.fleet-mode #view-button{display:none}
+.fleet-mode .fleet-help,.fleet-mode .fleet-status{overflow-wrap:anywhere}
+.fleet-mode .tools{flex-wrap:wrap}
+.fleet-mode .tools .tool-spacer{min-width:0}
+@media(max-width:950px){.fleet-container{height:clamp(390px,68vw,620px)}.fleet-heading{padding:18px}.fleet-heading h2{font-size:24px}.fleet-edition{font-size:7px;max-width:100px}.fleet-cameras{gap:6px;padding:12px 12px 4px}.fleet-cameras button{padding:9px 11px}}
+@media(max-width:600px){.fleet-presentation{margin:0 -4px 15px;border-radius:8px}.fleet-heading{padding:15px 14px;gap:12px}.fleet-heading p{font-size:7px;letter-spacing:1.6px}.fleet-heading h2{font-size:20px}.fleet-edition{display:none}.fleet-container{height:min(68dvh,540px);min-height:390px}.fleet-cameras{display:grid;grid-template-columns:1fr 1fr}.fleet-cameras button{font-size:10px;min-height:40px}.fleet-help{padding:0 14px;font-size:10px;line-height:1.65}.fleet-status{font-size:10px;margin-inline:12px}.fleet-accessible-toggle{max-width:calc(100% - 26px);font-size:9px}.fleet-mode .tools .quiet{flex-basis:40%}.fleet-mode .players{padding-top:16px}.fleet-container[aria-busy="true"]:after{font-size:10px;max-width:90%;white-space:normal;text-align:center}}

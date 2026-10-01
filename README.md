@@ -1,5 +1,13 @@
 # Échgammon — Classique Royal
 
+## La Citadelle des Marées — édition Blender 3D
+
+Ouvrir **`play.html?view=fleet`** pour jouer sur la citadelle nautique. Les deux armées (royaume rouge et flotte bleue), le plateau et les pions de course sont de vrais modèles exportés depuis Blender. Chaque type de pièce dispose de six clips articulés. La tour bleue tire un boulet ; la dame rouge projette une sphère d'énergie depuis son sceptre. Les règles hybrides, les bots, les exercices et les sauvegardes restent ceux du moteur existant.
+
+Les boutons Vue d'ensemble / Échiquier / Piste gauche / Piste droite cadrent la zone souhaitée. Cliquer une pièce puis une destination éclairée ; les dés déterminent les coups disponibles. Glisser pour faire tourner la scène et utiliser la molette ou le pincement pour zoomer. La vue 2D et les commandes accessibles restent disponibles. Le premier chargement récupère les modèles locaux au site, puis le navigateur les met en cache.
+
+Documentation : [intégration](docs/royal-fleet-integration.md), [modèles et effets](docs/royal-fleet-art.md). Vérification WebGL : `python -X utf8 tests/fleet.browser.py`. Les tests HTTP utilisent un serveur local qui fournit explicitement le bon type MIME des modules JavaScript sous Windows.
+
 Jeu web statique adapté de l'affiche fournie par l'utilisateur : échiquier 8×8 avec 32 pièces, pistes latérales totalisant 24 pointes, 15 pions de course par couleur et deux dés partagés. Gagnez par mat ou en sortant les 15 pions. Mode deux joueurs sur le même appareil, six bots de personnalités et de niveaux différents, problèmes tactiques et académie guidée.
 
 L'interface utilise un coffret en perspective CSS, des pièces SVG avec relief, des pions empilés et des dés CSS 3D. Aucun service distant, compte, clé ou dépendance n'est requis pendant la partie. Sur téléphone, les boutons Piste gauche / Échiquier / Piste droite et le défilement horizontal donnent accès à tout le plateau.

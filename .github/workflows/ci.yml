@@ -1,9 +1,9 @@
 name: CI
 on:
   push:
-    branches: [main, feat/playable-rois-et-des]
+    branches: [main, feat/playable-rois-et-des, feat/royal-fleet-blender]
   pull_request:
-    branches: [main]
+    branches: [main, feat/playable-rois-et-des]
 permissions:
   contents: read
 concurrency:
@@ -23,7 +23,7 @@ jobs:
       - run: npm run build
   browser:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - run: python -m venv .venv
@@ -32,6 +32,7 @@ jobs:
       - run: .venv/bin/python tests/echgammon.browser.py
       - run: .venv/bin/python tests/lobby.browser.py
       - run: .venv/bin/python tests/analysis.browser.py
+      - run: .venv/bin/python tests/fleet.browser.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -44,3 +45,5 @@ jobs:
             academy-mobile.png
             analysis-desktop.png
             analysis-mobile.png
+            fleet-desktop-preview.png
+            fleet-mobile-preview.png

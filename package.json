@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "test": "node --test",
-    "check": "node --check echgammon/chess.mjs && node --check echgammon/race.mjs && node --check echgammon/game.mjs && node --check echgammon/ai.mjs && node --check echgammon/catalog.mjs && node --check echgammon/training.mjs && node --check echgammon/progress.mjs && node --check echgammon/visuals.mjs && node --check echgammon/coach.mjs && node --check echgammon/lobby.mjs && node --check echgammon/view.mjs && node --check echgammon/analysis.mjs && node --check echgammon/analysis-worker.mjs && node --check echgammon/engine-client.mjs && node --check echgammon/analysis-ui.mjs && node --check echgammon/sound.mjs",
+    "check": "node --check echgammon/chess.mjs && node --check echgammon/race.mjs && node --check echgammon/game.mjs && node --check echgammon/ai.mjs && node --check echgammon/catalog.mjs && node --check echgammon/training.mjs && node --check echgammon/progress.mjs && node --check echgammon/visuals.mjs && node --check echgammon/coach.mjs && node --check echgammon/lobby.mjs && node --check echgammon/view.mjs && node --check echgammon/analysis.mjs && node --check echgammon/analysis-worker.mjs && node --check echgammon/engine-client.mjs && node --check echgammon/analysis-ui.mjs && node --check echgammon/sound.mjs && node --check echgammon/fleet-bridge.mjs && node --check echgammon/royal-fleet.mjs",
     "build": "npm run check"
   },
   "engines": {

@@ -1,0 +1,18 @@
+{
+  "source_objects": 4819,
+  "draw_meshes": 25,
+  "vertices": 313907,
+  "faces": 279859,
+  "bytes": 2331844,
+  "removed_decorations": 301,
+  "chess": {
+    "a1": [
+      -3.85,
+      1.56,
+      3.85
+    ],
+    "spacing": 1.1
+  },
+  "source": "citadelle-des-marees.blend",
+  "compression": "Draco"
+}

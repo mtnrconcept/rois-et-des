@@ -1,13 +1,13 @@
 """Lobby/academy journeys. OFFLINE_BROWSER=1 runs real assets with in-memory storage.
 Only the offline test adapter substitutes URL query inputs; production has no test hooks.
 """
-import base64, json, os, pathlib, re, shutil, socket, subprocess, time
+import base64, json, os, pathlib, re, shutil, subprocess
 from playwright.sync_api import sync_playwright
+from browser_server import BrowserServer
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 OFFLINE=os.environ.get('OFFLINE_BROWSER')=='1'
-with socket.socket() as s:s.bind(('127.0.0.1',0));PORT=s.getsockname()[1]
-BASE=f'http://127.0.0.1:{PORT}'
-server=subprocess.Popen(['python','-m','http.server',str(PORT),'--bind','127.0.0.1'],cwd=ROOT,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+server=BrowserServer(ROOT)
+BASE=server.base_url
 def mount(page,kind='lobby',query='',storage=None):
     filename='index.html' if kind=='lobby' else 'play.html'
     if not OFFLINE:
@@ -178,4 +178,4 @@ try:
         assert not errors,errors
         print(json.dumps({'browser':'Chromium','offlineAssets':OFFLINE,'storageAdapter':'in-memory' if OFFLINE else 'native','catalogueSolvedThroughUI':len(plans),'botProfiles':6,'lessonFlows':2,'desktop':'1440x1000','tablet':'820x1000','touch':'390x844','consoleErrors':errors}))
         browser.close()
-finally:server.terminate();server.wait(timeout=5)
+finally:server.close()

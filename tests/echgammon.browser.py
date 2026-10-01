@@ -1,11 +1,10 @@
 """Browser smoke tests; run with Python + Playwright, no app runtime dependencies."""
-import base64, json, os, pathlib, re, shutil, socket, subprocess, time
+import base64, json, os, pathlib, re, shutil
 from playwright.sync_api import sync_playwright
+from browser_server import BrowserServer
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-with socket.socket() as s:
-    s.bind(('127.0.0.1',0)); port=s.getsockname()[1]
-server=subprocess.Popen(['python','-m','http.server',str(port),'--bind','127.0.0.1'],cwd=ROOT,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
-BASE=f'http://127.0.0.1:{port}'
+server=BrowserServer(ROOT)
+BASE=server.base_url
 OFFLINE=os.environ.get('OFFLINE_BROWSER')=='1'
 module_urls={}
 def module_url(name):
@@ -32,7 +31,6 @@ def mount(page, saved=None):
     page.evaluate('url=>import(url)',module_url('view.mjs'))
 
 try:
-    time.sleep(.3)
     with sync_playwright() as p:
         browser=p.chromium.launch(headless=True,executable_path=os.environ.get('BROWSER_BIN') or shutil.which('chromium'),args=['--no-sandbox'])
         desktop=browser.new_context(viewport={'width':1440,'height':1100});page=desktop.new_page()
@@ -105,4 +103,4 @@ try:
         print(json.dumps({'browser':'Chromium','offlineAssets':OFFLINE,'storageAdapter':'in-memory' if OFFLINE else 'native','desktop':'1440x1100','mobile':'390x844','checks':14,'consoleErrors':errors},ensure_ascii=False))
         browser.close()
 finally:
-    server.terminate();server.wait(timeout=5)
+    server.close()
