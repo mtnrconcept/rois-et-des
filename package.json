@@ -1,0 +1,1 @@
+{"name":"rois-et-des","version":"1.0.0","type":"module","scripts":{"test":"node --test","check":"node --check src/engine.js && node --check src/ai.js && node --check src/app.js"},"engines":{"node":">=20"}}
