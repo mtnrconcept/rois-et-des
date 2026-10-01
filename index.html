@@ -1,1 +1,64 @@
-<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Rois & Dés</title><link rel="stylesheet" href="/styles.css"></head><body><main><header><div><p class="eyebrow">STRATÉGIE • HASARD • COURSE</p><h1>ROIS <span>&</span> DÉS</h1><p>Les échecs rencontrent le backgammon.</p></div><button id="rules">Règles</button></header><section class="toolbar"><label>Mode <select id="mode"><option value="ai">Contre l’IA</option><option value="local">2 joueurs</option></select></label><label id="levelWrap">IA <select id="level"><option>easy</option><option selected>medium</option><option>hard</option></select></label><button id="new">Nouvelle partie</button></section><section class="game"><aside><h3>NOIRS</h3><div id="blackStats"></div></aside><div><div id="status" class="status"></div><div id="board" class="board"></div><div class="dice"><button id="roll">Lancer les dés</button><div id="dice"></div></div></div><aside><h3>BLANCS</h3><div id="whiteStats"></div></aside></section></main><dialog id="help"><button id="close">×</button><h2>Comment jouer</h2><p>Chaque dé donne une action. Un double en donne quatre. La valeur du dé limite la portée des tours, fous et dames. Le roi avance d’une case et le cavalier garde son mouvement en L.</p><p>Deux pièces alliées sur une même case forment un bastion invulnérable. Une pièce isolée capturée va en prison et doit rentrer avant toute autre action.</p><p>Quand toutes tes pièces restantes sont dans les deux dernières rangées adverses, fais-les sortir. Le premier à sortir ses six pièces gagne.</p></dialog><script type="module" src="/src/app.js"></script></body></html>
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#1b110c">
+  <meta name="description" content="Échgammon — Classique Royal. Les échecs et le backgammon réunis : deux mondes, les mêmes dés, deux façons de gagner.">
+  <title>Échgammon — Classique Royal</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2324160e'/%3E%3Cpath d='M12 20l10 13 10-20 10 20 10-13-6 29H18z' fill='%23d6b36c'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./echgammon/royal.css">
+</head>
+<body>
+<main class="salon">
+  <header class="masthead">
+    <p class="motto">DEUX MONDES<br>UNE SEULE<br>STRATÉGIE</p>
+    <div class="brand"><svg class="brand-crown" viewBox="0 0 64 42" aria-hidden="true"><path d="M8 12l14 13L32 5l10 20 14-13-6 24H14zM14 40h36"/></svg><h1>ÉCHGAMMON</h1><p class="subtitle">Classique Royal</p><span class="ribbon">LES ÉCHECS RENCONTRENT LE BACKGAMMON</span></div>
+    <p class="motto right">RÉFLEXION<br>TACTIQUE<br>PARCOURS</p>
+  </header>
+  <nav class="tools" aria-label="Options de partie">
+    <label>PARTIE<select id="mode"><option value="ai">Contre l’ordinateur</option><option value="local">Deux joueurs · même écran</option></select></label>
+    <label id="level-label">ADVERSAIRE<select id="level"><option value="easy">Apprenti</option><option value="medium" selected>Stratège</option><option value="hard">Maître</option></select></label>
+    <span class="tool-spacer"></span><button id="view-button" class="quiet" aria-pressed="true">Vue en relief</button><button id="rules-button" class="quiet">Règles du jeu</button><button id="new-game" class="quiet">Nouvelle partie</button>
+  </nav>
+  <section class="players" aria-label="Les deux joueurs">
+    <div id="player-w" class="player"><span class="player-medallion ivory">♔</span><div><h2>Ivoire <small id="role-w">VOUS</small></h2><p><strong id="score-w">0</strong> / 15 pions sortis <span class="separator">·</span> <span id="bar-count-w">0</span> sur la barre</p></div></div>
+    <span class="versus">VS</span>
+    <div id="player-b" class="player"><span class="player-medallion ebony">♚</span><div><h2>Ébène <small id="role-b">ORDINATEUR</small></h2><p><strong id="score-b">0</strong> / 15 pions sortis <span class="separator">·</span> <span id="bar-count-b">0</span> sur la barre</p></div></div>
+  </section>
+  <nav class="board-navigation" aria-label="Naviguer sur le plateau"><span>EXPLORER LE COFFRET</span><button data-focus="left">Piste gauche</button><button data-focus="chess">Échiquier</button><button data-focus="right">Piste droite</button></nav>
+  <div id="board-scroll" class="board-scroll"><div class="cabinet-stage"><section id="cabinet" class="cabinet" aria-label="Plateau hybride">
+    <div class="corner tl">✦</div><div class="corner tr">✦</div><div class="corner bl">✦</div><div class="corner br">✦</div>
+    <div id="track-left" class="track" aria-label="Piste de course gauche"></div>
+    <div class="chess-frame"><div id="chess-board" class="chess-board" role="group" aria-label="Échiquier central 8 par 8"></div></div>
+    <div id="track-right" class="track" aria-label="Piste de course droite"></div>
+    <div class="cabinet-sign"><strong>ÉCHGAMMON</strong><em>Classique Royal</em></div>
+  </section></div></div>
+  <section class="race-rails" aria-label="Barre et zones de sortie">
+    <div class="rail"><button id="bar-w" class="bar-button">Barre ivoire <b>0</b></button><button id="off-w" class="off-button"><span>Sortie ivoire</span><span class="off-coins"></span><b>0 / 15</b></button></div>
+    <div class="rail"><button id="bar-b" class="bar-button">Barre ébène <b>0</b></button><button id="off-b" class="off-button"><span>Sortie ébène</span><span class="off-coins"></span><b>0 / 15</b></button></div>
+  </section>
+  <section class="console" aria-label="Tour de jeu">
+    <div class="turn-information"><span id="turn-caption" class="eyebrow">LE PREMIER LANCER</span><h2 id="status" aria-live="polite">La partie vous attend.</h2><p id="instruction">Lancez les dés pour déterminer qui commence.</p></div>
+    <div class="dice-station"><div id="dice" class="dice" aria-label="Dés disponibles"></div><button id="roll" class="gold-button">Lancer les dés</button></div>
+  </section>
+  <div class="assistant-bar"><span id="selection-info">Un roi à mater. Quinze pions à faire sortir. À vous de choisir.</span><button id="clear-selection" class="text-button">Tout désélectionner</button><button id="hint" class="text-button">Un conseil</button></div>
+  <details class="journal"><summary>Journal de partie <span id="turn-number">Tour 1</span></summary><ol id="history"></ol></details>
+  <footer><span>ÉCHGAMMON <i>—</i> Classique Royal</span><span>PARTIE LOCALE · SANS COMPTE · ÉDITION 3.0</span></footer>
+</main>
+<dialog id="rules-dialog" class="parchment"><button id="close-rules" class="dialog-close" aria-label="Fermer les règles">×</button><p class="eyebrow">LE LIVRET DU COFFRET</p><h2>Règles du jeu</h2><p class="intro">Deux mondes. Les mêmes dés. Une seule victoire.</p>
+  <div class="rules-grid">
+    <section><h3>01 · Gagner</h3><p>Matez le roi adverse <strong>ou</strong> sortez vos 15 pions de course. Le premier objectif accompli termine immédiatement la partie.</p></section>
+    <section><h3>02 · Le plateau</h3><p>32 pièces d’échecs au centre, sur 8 × 8 cases. 15 pions par couleur sur les 24 pointes latérales. Ivoire avance de 24 vers 1, Ébène de 1 vers 24. La barre reçoit les pions frappés.</p></section>
+    <section><h3>03 · Les dés</h3><p>Un dé par joueur au départ : le plus haut commence avec ces deux valeurs. Égalité : relance. Puis deux dés par tour ; un double donne quatre valeurs. Cliquez sur les dés pour choisir un paiement, ou laissez le jeu afficher tous les coups possibles.</p></section>
+    <section><h3>04 · Les échecs</h3><p>Déplacements classiques et chemins libres. Le coût est la <strong>distance exacte</strong> : tour, fou, dame et pion selon les cases parcourues ; cavalier 3, roi 1, roque 2. Un dé ou la somme de deux dés restants paie un déplacement. Une capture élimine la pièce. Promotion au choix.</p></section>
+    <section><h3>05 · La course</h3><p>Un dé déplace un pion d’exactement sa valeur, en avant. Un adversaire isolé est frappé. Deux adversaires ou plus ferment une pointe. Les pions alliés peuvent s’empiler sans limite de deux. Un pion sur la barre doit rentrer avant de déplacer d’autres pions de course.</p></section>
+    <section><h3>06 · Les sorties</h3><p>Ramenez tous vos pions restants dans votre dernier quadrant : 1–6 pour Ivoire, 19–24 pour Ébène. Aucun ne doit être sur la barre. Sortez ensuite avec la <strong>valeur exacte</strong>, conformément au texte de l’affiche. Sélectionnez le pion, puis sa zone de sortie.</p></section>
+  </div>
+  <section class="clarifications"><h3>Précisions de cette adaptation jouable</h3><p><strong>Le roi avant tout.</strong> Donner échec termine votre tour. L’adversaire doit répondre sur l’échiquier avant de jouer la course. Si aucune défense n’est payable mais qu’une défense géométrique existe, une <em>parade royale</em> utilise tous les dés restants. Un mauvais lancer ne transforme jamais un échec en mat.</p><p><strong>Pas de tour figé.</strong> Un dé temporairement bloqué reste disponible, car un autre mouvement peut le libérer. Si aucun coup n’est payable, même avec deux dés additionnés, le tour passe automatiquement. La barre bloque uniquement les pions de course, pas les pièces d’échecs. L’obligation de maximiser les dés du backgammon pur n’est pas appliquée aux dés partagés.</p><p><strong>Cas particuliers.</strong> La prise en passant reste possible jusqu’au prochain mouvement d’échecs, au plus tard à la fin du tour adverse. Le roque exige aussi les conditions classiques de sécurité et de non-déplacement. Le pat ne bloque pas la course. Trois répétitions du plateau hybride complet, ou 400 tours individuels, donnent une partie nulle.</p><p>Le règlement classique de l’affiche est la référence. Ces précisions règlent ses ambiguïtés ; ses variantes optionnelles ne sont pas activées.</p></section>
+</dialog>
+<dialog id="new-dialog" class="parchment small-dialog"><h2>Une nouvelle partie ?</h2><p>La partie locale en cours sera remplacée.</p><div class="dialog-actions"><button id="cancel-new">Continuer la partie</button><button id="confirm-new" class="gold-button">Recommencer</button></div></dialog>
+<dialog id="promotion-dialog" class="parchment small-dialog"><h2>Choisissez votre promotion</h2><p>Votre pion a atteint la dernière rangée.</p><div id="promotion-choices" class="promotion-choices"></div></dialog>
+<noscript>Activez JavaScript pour jouer à Échgammon.</noscript>
+<script type="module" src="./echgammon/view.mjs"></script>
+</body>
+</html>
