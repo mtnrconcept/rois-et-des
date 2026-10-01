@@ -17,6 +17,16 @@ L'interface utilise un coffret en perspective CSS, des pièces SVG avec relief, 
 
 Les exercices et les leçons ne remplacent jamais la sauvegarde d’une partie normale. Les URL inconnues sont gérées sans lancer un faux exercice. Le plateau et ses règles n’ont pas été remplacés par un second moteur.
 
+## Analyse approfondie et sons de bois · 4.1
+
+Astra, Octave et le réglage Maître utilisent maintenant un Worker pour rechercher des suites de coups sur les dés disponibles et des réponses adverses. Le bouton « Un conseil » utilise ce même moteur, indépendamment du niveau du bot. Choix Rapide (1,5 s), Approfondi (5 s), Maximum (12 s) ; Octave est plafonné à 1,8 s. Une annulation termine réellement le Worker. Un résultat périmé n'est pas joué. Le repli rapide est annoncé si les Workers sont indisponibles.
+
+La recherche est **sélective** : elle compare les meilleures suites retenues pour le tour actuel et les réponses du tour adverse, sur 21 lancers distincts pondérés sur 36 possibilités. Elle ne prouve pas le meilleur coup absolu, ne revendique ni force Stockfish ni Elo. Le panneau affiche le meilleur coup trouvé, les paiements, captures et risques constatés, la suite légale, trois alternatives et une réponse adverse conditionnelle. Approfondir élargit la recherche sous un budget de temps/nœuds. Les exercices gardent leurs indices éditoriaux.
+
+Les bruitages sont une synthèse locale originale : contact et glissement sur bois, capture, roque, pions de course, sortie et dés. Pas d'échantillon tiers. Premier geste requis pour activer l'audio, volume initial 35 %, silence et réglage persistants. Aucun bruit de pose sur sélection ou coup refusé. Le jeu reste utilisable sans audio.
+
+Voir `docs/engine-audio.md` pour les méthodes, mesures et limites. Tester avec `python tests/analysis.browser.py` en complément des suites historiques.
+
 ## Jouer / développer
 
 ```sh
@@ -37,6 +47,7 @@ python -m venv .venv
 .venv/bin/python -m playwright install --with-deps chromium
 .venv/bin/python tests/echgammon.browser.py
 .venv/bin/python tests/lobby.browser.py
+.venv/bin/python tests/analysis.browser.py
 ```
 
 Le test lance son propre serveur local. En environnement interdisant toute navigation du navigateur, `OFFLINE_BROWSER=1` exécute les mêmes fichiers HTML/CSS/JS en mémoire avec un adaptateur de stockage : cela vérifie les interactions et le rendu, pas le réseau ni la persistance native. La CI utilise le mode HTTP et le stockage natif.

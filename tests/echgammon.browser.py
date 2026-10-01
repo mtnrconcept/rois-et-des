@@ -28,6 +28,7 @@ def mount(page, saved=None):
     page.evaluate('''saved=>{const values=new Map();if(saved)values.set('echgammon.royal.v3',saved);Object.defineProperty(window,'localStorage',{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k)},configurable:true});}''',saved)
     page.add_style_tag(content=(ROOT/'echgammon/royal.css').read_text())
     page.add_style_tag(content=(ROOT/'echgammon/academy.css').read_text())
+    page.add_style_tag(content=(ROOT/'echgammon/analysis.css').read_text())
     page.evaluate('url=>import(url)',module_url('view.mjs'))
 
 try:

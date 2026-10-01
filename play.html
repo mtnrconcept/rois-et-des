@@ -8,6 +8,7 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2324160e'/%3E%3Cpath d='M12 20l10 13 10-20 10 20 10-13-6 29H18z' fill='%23d6b36c'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="./echgammon/royal.css">
   <link rel="stylesheet" href="./echgammon/academy.css">
+  <link rel="stylesheet" href="./echgammon/analysis.css">
 </head>
 <body>
 <main class="salon">
@@ -22,6 +23,7 @@
     <label id="level-label">ADVERSAIRE<select id="level"><option value="easy">Apprenti</option><option value="medium" selected>Stratège</option><option value="hard">Maître</option></select></label>
     <span class="tool-spacer"></span><button id="view-button" class="quiet" aria-pressed="true">Vue en relief</button><button id="rules-button" class="quiet">Règles du jeu</button><button id="new-game" class="quiet">Nouvelle partie</button>
   </nav>
+  <div class="sound-tools" aria-label="Son et analyse"><label id="engine-time-label">Calcul <select id="thinking-time"><option value="1500">Rapide · 1,5 s max.</option><option value="5000" selected>Approfondi · 5 s max.</option><option value="12000">Maximum · 12 s max.</option></select></label><button id="sound-toggle" aria-pressed="true">Son du bois activé</button><label for="sound-volume">Volume <input type="range" id="sound-volume" min="0" max="1" step="0.05" value="0.35"><output id="sound-value">35 %</output></label><span id="sound-status" role="status"></span></div>
   <div class="match-layout"><div class="match-board">
   <section class="players" aria-label="Les deux joueurs">
     <div id="player-w" class="player"><span class="player-medallion ivory">♔</span><div><h2>Ivoire <small id="role-w">VOUS</small></h2><p><strong id="score-w">0</strong> / 15 pions sortis <span class="separator">·</span> <span id="bar-count-w">0</span> sur la barre</p></div></div>
@@ -48,7 +50,8 @@
   <details class="journal"><summary>Journal de partie <span id="turn-number">Tour 1</span></summary><ol id="history"></ol></details>
   </div><aside id="learning-panel" hidden></aside></div>
   <div id="match-guidance" class="match-guidance" hidden><span>✧</span><div><strong>Le guide du salon</strong><p id="match-guidance-text">Choisissez vos dés, puis explorez les coups possibles sur les deux plateaux.</p></div><button id="explain-move">Comprendre</button></div>
-  <footer><span>ÉCHGAMMON <i>—</i> Classique Royal</span><span>PARTIE LOCALE · SANS COMPTE · ÉDITION 4.0</span></footer>
+  <section id="analysis-panel" class="analysis-panel" aria-label="Analyse expliquée" hidden></section>
+  <footer><span>ÉCHGAMMON <i>—</i> Classique Royal</span><span>PARTIE LOCALE · SANS COMPTE · ÉDITION 4.1</span></footer>
 </main>
 <dialog id="rules-dialog" class="parchment"><button id="close-rules" class="dialog-close" aria-label="Fermer les règles">×</button><p class="eyebrow">LE LIVRET DU COFFRET</p><h2>Règles du jeu</h2><p class="intro">Deux mondes. Les mêmes dés. Une seule victoire.</p>
   <div class="rules-grid">

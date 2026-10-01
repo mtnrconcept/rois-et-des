@@ -1,3 +1,7 @@
+import {createEngineClient} from './engine-client.mjs';
+import {createAnalysisPanel} from './analysis-ui.mjs';
+import {analysisKey} from './analysis.mjs';
+import {createWoodAudio,soundForAction} from './sound.mjs';
 import {pieceSVG,cube} from './visuals.mjs';
 import {createGame,roll,play,actions,isState,pieceName,sideName} from './game.mjs';
 import {squareName,inCheck} from './chess.mjs';
@@ -7,6 +11,8 @@ import {startTraining,attemptTraining,revealHint,showSolution,solutionAction,sta
 import {readProgress,writeProgress,recordExercise,recordGame} from './progress.mjs';
 import {trainingCoach,actionExplanation,sourceTarget,bubble} from './coach.mjs';
 const $=s=>document.querySelector(s), STORE='echgammon.royal.v3';
+const aiEngine=createEngineClient(),hintEngine=createEngineClient(),wood=createWoodAudio();
+let analysisPanel=null,hintSerial=0;
 const params=new URLSearchParams(location.search);
 const lesson=LESSONS.find(l=>l.id===params.get('lesson'))||null;
 const exercise=EXERCISES.find(e=>e.id===(lesson?.exercise||params.get('puzzle')))||null;
@@ -81,18 +87,22 @@ function render(animate=false) {
   if(focused&&document.getElementById(focused))document.getElementById(focused).focus({preventScroll:true});
   if(training){$('#roll').disabled=true;$('#roll').textContent='Dés de l’exercice';$('#turn-caption').textContent=lesson?'LEÇON GUIDÉE':'PROBLÈME TACTIQUE';$('#instruction').textContent=training.complete?'Objectif terminé. Consultez l’explication et continuez votre parcours.':introActive?'Suivez les bulles du guide, puis réalisez le mouvement.':exercise.objective;}
   $('#match-guidance').hidden=!assisted||Boolean(training)||invalidTraining;
-  if(assisted&&!training){const a=filtered().find(matchesSource);$('#match-guidance-text').textContent=a?actionExplanation(game,a):game.phase==='opening'?'Le plus haut dé détermine le premier joueur. Vous aurez ensuite les deux valeurs pour votre premier tour.':game.phase==='roll'?'Lancez les dés, puis choisissez entre l’échiquier et la course.':inCheck(game.chess,game.turn)?'Le roi est prioritaire. Répondez à l’échec avant de jouer la course.':'Explorez les deux plateaux. Cliquez « Un conseil » pour une suggestion expliquée, pas une promesse de meilleur coup.';}
+  if(assisted&&!training){const a=filtered().find(matchesSource);$('#match-guidance-text').textContent=a?actionExplanation(game,a):game.phase==='opening'?'Le plus haut dé détermine le premier joueur. Vous aurez ensuite les deux valeurs pour votre premier tour.':game.phase==='roll'?'Lancez les dés, puis choisissez entre l’échiquier et la course.':inCheck(game.chess,game.turn)?'Le roi est prioritaire. Répondez à l’échec avant de jouer la course.':'Explorez les deux plateaux. Cliquez « Un conseil » pour comparer les variantes et comprendre le meilleur coup trouvé.';}
   coach?.update(feedback);
   save();
 }
-function cancelAI(){generation++;if(timer!==null){clearTimeout(timer);timer=null;}}
-function commitAction(id) {try{
+function cancelAI(){generation++;aiEngine.cancel();if(timer!==null){clearTimeout(timer);timer=null;}}
+function cancelHint(hide=true){hintSerial++;hintEngine.cancel();if(hide)analysisPanel?.hide();}
+function contact(a){const pan=a.type==='chess'?(a.to%8-3.5)/5:typeof a.to==='number'?(a.to<12?-.4:.4):0;wood.play(soundForAction(a),pan);}
+function commitAction(id,report=null) {try{
+ const accepted=available.find(a=>a.id===id);
  normalBubble.hide();coach?.close();
  if(training){const result=attemptTraining(training,id);training=result.session;game=training.game;feedback=result.message;selected=null;selectedDice=[];
   if(training.complete){const p=recordExercise(readProgress(),exercise.id,{stars:stars(training),kind:lesson?'lesson':'puzzle',lesson:lesson?.id||null});if(!writeProgress(p))feedback+=' Stockage indisponible : résultat conservé pour cette page seulement.';}
-  render();return;
+  if(result.correct&&accepted)contact(accepted);render();return;
  }
- game=play(game,id);selected=null;selectedDice=[];render();scheduleAI();
+ const next=play(game,id);cancelHint();game=next;if(accepted)contact(accepted);selected=null;selectedDice=[];render();
+ if(report)analysisPanel.show(report,{past:true,title:'Pourquoi l’ordinateur a joué ce coup'});scheduleAI();
 }catch(e){$('#instruction').textContent=e.message;}}
 function chooseDestination(candidates) {
   if(!candidates.length)return false;
@@ -129,26 +139,42 @@ $('#dice').addEventListener('click',event=>{
   render();
 });
 function throwDice(){return [1+Math.floor(Math.random()*6),1+Math.floor(Math.random()*6)];}
-$('#roll').addEventListener('click',()=>{if(!human()||!['opening','roll'].includes(game.phase))return;try{game=roll(game,throwDice());selected=null;selectedDice=[];render(true);scheduleAI();}catch(e){$('#instruction').textContent=e.message;}});
+$('#roll').addEventListener('click',()=>{if(!human()||!['opening','roll'].includes(game.phase))return;try{cancelHint();game=roll(game,throwDice());wood.play('dice');selected=null;selectedDice=[];render(true);scheduleAI();}catch(e){$('#instruction').textContent=e.message;}});
 function scheduleAI() {
   cancelAI();if(training||invalidTraining||mode!=='ai'||game.turn!=='b'||game.phase==='opening'||game.winner)return;
   const token=generation,revision=game.revision;
-  timer=setTimeout(()=>{
+  timer=setTimeout(async()=>{
     if(token!==generation||revision!==game.revision)return;
     timer=null;
     try {
-      if(game.phase==='roll'){game=roll(game,throwDice());render(true);scheduleAI();}
-      else {const id=bot?chooseBot(game,bot.id):choose(game,level);if(id)commitAction(id);else $('#instruction').textContent='Aucun coup disponible. Vous pouvez reprendre en mode deux joueurs.';}
-    }catch(e){$('#instruction').textContent='Le coup n’a pas été exécuté : '+e.message;}
-  },game.phase==='roll'?600:380);
+      if(game.phase==='roll'){game=roll(game,throwDice());wood.play('dice');render(true);scheduleAI();}
+      else if(bot?.rank>=5||(!bot&&level==='hard')){
+        analysisPanel.busy((bot?.name||'Le maître')+' examine les variantes',true);
+        const timeMs=bot?.id==='octave'?Math.min(1800,+$('#thinking-time').value):+$('#thinking-time').value;
+        const result=await aiEngine.analyze(game,{timeMs,rootWidth:24,turnWidth:4,onProgress:p=>{if(token===generation)analysisPanel.progress(p);}});
+        if(token!==generation||revision!==game.revision||document.hidden)return;
+        if(result.actionId)commitAction(result.actionId,result);
+      }else {const id=bot?chooseBot(game,bot.id):choose(game,level);if(id)commitAction(id);else $('#instruction').textContent='Aucun coup disponible. Vous pouvez reprendre en mode deux joueurs.';}
+    }catch(e){if(e.name!=='AbortError')$('#instruction').textContent='Le coup n’a pas été exécuté : '+e.message;}
+  },game.phase==='roll'?500:220);
 }
-$('#mode').addEventListener('change',event=>{cancelAI();mode=event.target.value==='local'?'local':'ai';selected=null;selectedDice=[];render();scheduleAI();});
-$('#level').addEventListener('change',event=>{bot=BOTS.find(b=>b.id===event.target.value)||null;if(!bot)level=event.target.value;$('#match-context').textContent=bot?'CONTRE '+bot.name.toUpperCase():'PARTIE LIBRE';render();});
+async function requestAnalysis(timeMs=+$('#thinking-time').value){
+ if(training||invalidTraining||!human()||game.phase!=='play')return;
+ cancelHint();const serial=hintSerial,revision=game.revision;normalBubble.hide();analysisPanel.busy('Recherche du meilleur coup trouvé');
+ try{
+  const result=await hintEngine.analyze(game,{timeMs,rootWidth:24,turnWidth:4,onProgress:p=>{if(serial===hintSerial)analysisPanel.progress(p);}});
+  if(serial!==hintSerial||revision!==game.revision||result.key!==analysisKey(game))return;
+  analysisPanel.show(result);const a=available.find(a=>a.id===result.actionId);
+  if(a){highlight(a);$('#selection-info').textContent='Suggestion analysée : '+result.candidates[0].label;}
+ }catch(e){if(e.name!=='AbortError')$('#instruction').textContent='Analyse indisponible : '+e.message;}
+}
+$('#mode').addEventListener('change',event=>{cancelHint();cancelAI();mode=event.target.value==='local'?'local':'ai';selected=null;selectedDice=[];render();scheduleAI();});
+$('#level').addEventListener('change',event=>{cancelHint();cancelAI();bot=BOTS.find(b=>b.id===event.target.value)||null;if(!bot)level=event.target.value;$('#match-context').textContent=bot?'CONTRE '+bot.name.toUpperCase():'PARTIE LIBRE';render();scheduleAI();});
 $('#clear-selection').addEventListener('click',()=>{selected=null;selectedDice=[];render();});
-$('#hint').addEventListener('click',()=>{if(training){$('#training-hint')?.click();return;}if(!human()||game.phase!=='play')return;const id=choose(game,'hard'),a=available.find(a=>a.id===id);if(a){highlight(a);const text=actionExplanation(game,a);$('#selection-info').textContent='Suggestion : '+text;if(assisted){normalBubble.show({title:'Un coup à considérer',text,anchor:sourceTarget(a,game.turn)});}}});
+$('#hint').addEventListener('click',()=>{if(training){$('#training-hint')?.click();return;}requestAnalysis();});
 $('#rules-button').addEventListener('click',()=>$('#rules-dialog').showModal());$('#close-rules').addEventListener('click',()=>$('#rules-dialog').close());
 $('#new-game').addEventListener('click',()=>$('#new-dialog').showModal());$('#cancel-new').addEventListener('click',()=>$('#new-dialog').close());
-$('#confirm-new').addEventListener('click',()=>{cancelAI();normalBubble.hide();sessionId=globalThis.crypto?.randomUUID?.()||('local-'+Date.now());game=createGame();selected=null;selectedDice=[];promotions=[];$('#new-dialog').close();$('#promotion-dialog').close();render();});
+$('#confirm-new').addEventListener('click',()=>{cancelHint();cancelAI();wood.stop();normalBubble.hide();sessionId=globalThis.crypto?.randomUUID?.()||('local-'+Date.now());game=createGame();selected=null;selectedDice=[];promotions=[];$('#new-dialog').close();$('#promotion-dialog').close();render();});
 $('#promotion-choices').addEventListener('click',event=>{const button=event.target.closest('[data-promote]');if(!button)return;const a=promotions.find(a=>a.promotion===button.dataset.promote);$('#promotion-dialog').close();if(a)commitAction(a.id);promotions=[];});
 $('#view-button').addEventListener('click',event=>{const flat=document.body.classList.toggle('flat');event.target.textContent=flat?'Vue à plat':'Vue en relief';event.target.setAttribute('aria-pressed',String(!flat));});
 function focusBoard(which,behavior='smooth') {
@@ -171,6 +197,22 @@ if(training){
 }else if(invalidTraining){
  $('#match-context').textContent='EXERCICE INTROUVABLE';$('#learning-panel').hidden=false;$('#learning-panel').innerHTML='<h2>Ce contenu n’existe pas.</h2><p>Retrouvez les exercices disponibles dans le salon.</p><a href="./index.html#puzzles">Retour aux problèmes →</a>';document.body.classList.add('training');
 }else{$('#match-context').textContent=bot?'CONTRE '+bot.name.toUpperCase()+' · '+(assisted?'ACCOMPAGNÉ':'DÉFI'):mode==='local'?'DEUX JOUEURS · MÊME ÉCRAN':'PARTIE LIBRE';}
-window.addEventListener('pagehide',()=>{cancelAI();normalBubble.hide();coach?.close();});
+window.addEventListener('pagehide',()=>{cancelHint();cancelAI();wood.stop();normalBubble.hide();coach?.close();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelHint();cancelAI();wood.stop();}else scheduleAI();});
 window.addEventListener('pageshow',()=>scheduleAI());
+analysisPanel=createAnalysisPanel($('#analysis-panel'),{
+ onChoose:(a,r)=>{if(human()&&r.key===analysisKey(game)){const found=available.find(m=>m.id===a.id);if(found){highlight(found);focusTarget(sourceTarget(found,game.turn));}}},
+ onRequest:requestAnalysis,onCancel:()=>{
+  const computerWasThinking=aiEngine.busy;cancelHint(false);
+  if(computerWasThinking){cancelAI();if(!game.winner&&game.turn==='b'&&mode==='ai'&&game.phase==='play'){const id=bot?chooseBot(game,bot.id):choose(game,'hard');if(id)commitAction(id);}}
+ }
+});
+function soundControls(){const s=wood.settings;$('#sound-toggle').setAttribute('aria-pressed',String(s.enabled));$('#sound-toggle').textContent=s.enabled?'Son du bois activé':'Son du bois coupé';$('#sound-volume').value=s.volume;$('#sound-value').textContent=Math.round(s.volume*100)+' %';}
+function unlockAudio(){if(!wood.settings.enabled)return;wood.unlock().then(ok=>{$('#sound-status').textContent=ok?'':'Audio indisponible ou suspendu';});}
+document.addEventListener('pointerdown',unlockAudio,{capture:true,passive:true});
+document.addEventListener('keydown',event=>{if(['Enter',' '].includes(event.key))unlockAudio();},{capture:true});
+$('#sound-toggle').addEventListener('click',()=>{wood.setEnabled(!wood.settings.enabled);soundControls();if(wood.settings.enabled)unlockAudio();});
+$('#sound-volume').addEventListener('input',event=>{wood.setVolume(+event.target.value);soundControls();});
+$('#thinking-time').addEventListener('change',()=>{cancelHint();cancelAI();scheduleAI();});
+soundControls();
 render();requestAnimationFrame(()=>{if(innerWidth<950)focusBoard('chess','auto');coach?.start();});scheduleAI();
