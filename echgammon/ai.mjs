@@ -1,3 +1,4 @@
+import {botById} from './catalog.mjs';
 import {actions,play} from './game.mjs';
 import {moveChess,inCheck,legalChess,attacked,other} from './chess.mjs';
 const value={P:100,N:310,B:325,R:500,Q:900,K:1500};
@@ -33,4 +34,29 @@ export function choose(g,level='medium',random=Math.random) {
     else if(n.turn===g.turn&&n.phase==='play')entry.s+=Math.max(0,...actions(n).map(a=>score(n,a)))*0.35;
   }
   ranked.sort((a,b)=>b.s-a.s);return ranked[0].a.id;
+}
+/** Personality levels are indicative, not calibrated Elo ratings. Search is bounded for mobile. */
+export function chooseBot(g,id,random=Math.random){
+ const bot=botById(id),list=actions(g);if(!list.length)return null;
+ const ranked=list.map(a=>({a,s:score(g,a)*(a.type==='race'?bot.race:bot.chess)})).sort((a,b)=>b.s-a.s);
+ const win=ranked.find(r=>r.s>5e6);if(win)return win.a.id;
+ const rand=()=>Math.max(0,Math.min(.999999,Number(random())||0));
+ if(rand()<bot.error)return (bot.rank===1?list:ranked.slice(0,bot.top).map(r=>r.a))[Math.floor(rand()*(bot.rank===1?list.length:Math.min(bot.top,ranked.length)))].id;
+ if(bot.search){
+  const limit=bot.search===3?14:bot.search===2?9:5;
+  for(const entry of ranked.slice(0,limit)){
+   const n=play(g,entry.a.id);if(n.winner===g.turn){entry.s+=1e7;continue;}
+   if(n.turn===g.turn&&n.phase==='play')entry.s+=Math.max(0,...actions(n).map(a=>score(n,a)))*.36;
+   if(bot.search>=2){
+    // A geometric threat estimate, not an exact prediction of the opponent's next dice.
+    const replies=legalChess(n.chess,other(g.turn));let threat=0;
+    for(const a of replies){let cost=a.capture?value[a.capture[1]]:0;
+     if(bot.search===3&&a.capture){const c=moveChess(n.chess,a);if(attacked(c,a.to,g.turn))cost-=value[n.chess.board[a.from][1]]*.65;}
+     threat=Math.max(threat,cost);
+    }
+    entry.s-=Math.max(0,threat)*(bot.search===3?.65:.35);
+   }
+  }
+ }
+ ranked.sort((a,b)=>b.s-a.s);return ranked[0].a.id;
 }

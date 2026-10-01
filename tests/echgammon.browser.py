@@ -16,17 +16,18 @@ def module_url(name):
     return module_urls[name]
 def mount(page, saved=None):
     if not OFFLINE:
-        page.goto(BASE)
+        page.goto(BASE+'/play.html')
         if saved is not None:
             page.evaluate("v=>localStorage.setItem('echgammon.royal.v3',v)",saved);page.reload()
         return
     # No browser/network policy is changed. Render and execute the real local assets.
-    html=(ROOT/'index.html').read_text()
+    html=(ROOT/'play.html').read_text()
     html=re.sub(r'<script[^>]*>.*?</script>','',html,flags=re.S)
     html=re.sub(r'<link[^>]+rel="stylesheet"[^>]*>','',html)
     page.set_content(html)
     page.evaluate('''saved=>{const values=new Map();if(saved)values.set('echgammon.royal.v3',saved);Object.defineProperty(window,'localStorage',{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k)},configurable:true});}''',saved)
     page.add_style_tag(content=(ROOT/'echgammon/royal.css').read_text())
+    page.add_style_tag(content=(ROOT/'echgammon/academy.css').read_text())
     page.evaluate('url=>import(url)',module_url('view.mjs'))
 
 try:

@@ -1,33 +1,34 @@
+import {pieceSVG,cube} from './visuals.mjs';
 import {createGame,roll,play,actions,isState,pieceName,sideName} from './game.mjs';
 import {squareName,inCheck} from './chess.mjs';
-import {choose} from './ai.mjs';
+import {choose,chooseBot} from './ai.mjs';
+import {BOTS,EXERCISES,LESSONS,botById} from './catalog.mjs';
+import {startTraining,attemptTraining,revealHint,showSolution,solutionAction,stars} from './training.mjs';
+import {readProgress,writeProgress,recordExercise,recordGame} from './progress.mjs';
+import {trainingCoach,actionExplanation,sourceTarget,bubble} from './coach.mjs';
 const $=s=>document.querySelector(s), STORE='echgammon.royal.v3';
-let game=createGame(),mode='ai',level='medium',selected=null,selectedDice=[],available=[],timer=null,generation=0,promotions=[];
-try {const saved=JSON.parse(localStorage.getItem(STORE));if(saved&&isState(saved.game)&&!(saved.game.phase==='play'&&!actions(saved.game).length)){game=saved.game;mode=saved.mode==='local'?'local':'ai';level=['easy','medium','hard'].includes(saved.level)?saved.level:'medium';}}catch{/* Storage is optional. */}
-$('#mode').value=mode;$('#level').value=level;
-const human=()=>!game.winner&&(mode==='local'||game.turn==='w'||game.phase==='opening');
+const params=new URLSearchParams(location.search);
+const lesson=LESSONS.find(l=>l.id===params.get('lesson'))||null;
+const exercise=EXERCISES.find(e=>e.id===(lesson?.exercise||params.get('puzzle')))||null;
+const invalidTraining=(params.has('lesson')&&!lesson)||(params.has('puzzle')&&!exercise);
+let training=exercise?startTraining(exercise.id):null,coach=null,introActive=Boolean(lesson),feedback='';
+let game=createGame(),mode='ai',level='medium',bot=null,assisted=false,selected=null,selectedDice=[],available=[],timer=null,generation=0,promotions=[];
+let sessionId=globalThis.crypto?.randomUUID?.()||('local-'+Date.now()+'-'+Math.random().toString(36).slice(2));
+try {const saved=JSON.parse(localStorage.getItem(STORE));if(!training&&!invalidTraining&&!params.has('fresh')&&saved&&isState(saved.game)&&!(saved.game.phase==='play'&&!actions(saved.game).length)){
+ game=saved.game;mode=saved.mode==='local'?'local':'ai';level=['easy','medium','hard'].includes(saved.level)?saved.level:'medium';bot=BOTS.find(b=>b.id===saved.bot)||null;assisted=Boolean(saved.assisted);sessionId=typeof saved.sessionId==='string'?saved.sessionId:sessionId;
+}}catch{/* Storage is optional. */}
+if(params.has('fresh')||(!training&&params.has('bot'))){
+ if(params.has('fresh'))game=createGame();mode=params.get('mode')==='local'?'local':'ai';bot=mode==='ai'?botById(params.get('bot')):null;assisted=params.get('assist')==='1';
+}
+if(training){game=training.game;mode='local';assisted=false;}
+if(params.has('fresh')){try{const url=new URL(location.href);url.searchParams.delete('fresh');history.replaceState(null,'',url);}catch{/* Offline test URL. */}}
+$('#level').insertAdjacentHTML('beforeend','<optgroup label="Les bots du salon">'+BOTS.map(b=>`<option value="${b.id}">${b.name} · ${b.label}</option>`).join('')+'</optgroup>');
+$('#mode').value=mode;$('#level').value=bot?.id||level;
+const human=()=>!invalidTraining&&!introActive&&!training?.complete&&!game.winner&&(mode==='local'||game.turn==='w'||game.phase==='opening');
 const selectedMask=()=>selectedDice.reduce((m,i)=>m|(1<<i),0);
 const filtered=()=>available.filter(a=>!selectedDice.length||a.mask===selectedMask());
 const matchesSource=a=>selected&&a.type===selected.type&&a.from===selected.from;
 const payment=a=>a.rescue?'R':game.dice.flatMap((v,i)=>a.mask&(1<<i)?[v]:[]).join('+');
-const paths={
- P:'M31 49 Q29 60 25 73 L55 73 Q51 60 49 49Z M28 45 Q40 38 52 45 L49 51H31Z M51 26A11 11 0 1 1 29 26A11 11 0 1 1 51 26Z',
- R:'M27 34H53L50 48L53 73H27L30 48Z M22 17H30V25H35V17H45V25H50V17H58L55 38H25Z',
- B:'M31 47H49L52 73H28Z M24 43Q23 30 40 12Q57 30 56 43Q40 55 24 43Z M28 53H52L51 57H29Z',
- N:'M25 72Q27 62 29 56L22 50L25 42L35 30L36 16L43 21L49 17L52 31Q63 42 58 62L57 73Z M29 45L39 42L43 34',
- Q:'M29 47H51L53 73H27Z M21 25L31 34L34 18L40 33L47 18L49 34L59 25L53 49H27Z M25 51H55L52 56H28Z',
- K:'M29 48H51L52 73H28Z M24 34Q40 27 56 34L51 50H29Z M36 10H44V18H52V26H44V34H36V26H28V18H36Z'
-};
-function pieceSVG(p,id) {
-  const light=p[0]==='w',grad='piece-'+id,colors=light?['#785224','#d7b477','#fff0c7','#af8750']:['#080706','#30271e','#74634d','#100c09'];
-  const detail=p[1]==='B'?'<path d="M43 22L34 38" stroke="#49301f" stroke-width="2"/>':p[1]==='N'?'<circle cx="43" cy="33" r="2" fill="#100d09"/>':p[1]==='Q'?'<g fill="url(#'+grad+')"><circle cx="21" cy="24" r="3"/><circle cx="34" cy="17" r="3"/><circle cx="47" cy="17" r="3"/><circle cx="59" cy="24" r="3"/></g>':'';
-  return `<svg class="chess-piece" viewBox="0 0 80 100" aria-hidden="true"><defs><linearGradient id="${grad}"><stop offset="0" stop-color="${colors[0]}"/><stop offset=".28" stop-color="${colors[1]}"/><stop offset=".53" stop-color="${colors[2]}"/><stop offset="1" stop-color="${colors[3]}"/></linearGradient></defs><ellipse cx="41" cy="94" rx="28" ry="5" fill="#0004"/><g fill="url(#${grad})" stroke="${light?'#70532d':'#080705'}" stroke-width="1.1" stroke-linejoin="round"><path d="M23 72Q40 67 57 72L60 79L56 84H24L20 79Z"/><path d="${paths[p[1]]}"/><path d="M21 79H59L65 88Q64 96 40 96Q16 96 15 88Z"/><ellipse cx="40" cy="81" rx="21" ry="4"/><path d="M18 88Q39 94 62 88" fill="none" stroke="${light?'#f7dfad':'#998466'}" opacity=".6"/></g>${detail}</svg>`;
-}
-function cube(value) {
-  const top=[1,6].includes(value)?2:1,right=[1,2,3,4,5,6].find(n=>![value,7-value,top,7-top].includes(n));
-  const dots={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
-  return '<span class="cube">'+Object.entries({front:value,back:7-value,top,bottom:7-top,right,left:7-right}).map(([face,v])=>`<span class="face ${face}">${dots[v].map(n=>`<i class="pip" style="grid-area:${Math.floor(n/3)+1}/${n%3+1}"></i>`).join('')}</span>`).join('')+'</span>';
-}
 function renderChess() {
   const legal=filtered().filter(matchesSource),check=inCheck(game.chess,game.turn);
   let html='';
@@ -46,7 +47,11 @@ function renderTrack(which) {
     return `<button id="point-${n}" class="point ${index>=6?'up':'down'} ${on?'selected':''} ${targets.length?'legal':''}" data-point="${n}" aria-label="Pointe ${n+1}, ${num?num+' pions '+sideName(color):'vide'}" aria-pressed="${on}"><span class="triangle"></span><span class="point-number">${n+1}</span>${Array.from({length:Math.min(num,5)},(_,i)=>`<span class="checker ${color}" style="--i:${i}"></span>`).join('')}${num>5?`<span class="stack-count">×${num}</span>`:''}${targets.length?`<span class="cost-tag">${payment(targets[0])}</span>`:''}</button>`;
   }).join('');
 }
-function save() {try{localStorage.setItem(STORE,JSON.stringify({game,mode,level}));}catch{/* Play remains available without storage. */}}
+function save() {
+ if(training||invalidTraining)return;
+ try{localStorage.setItem(STORE,JSON.stringify({game,mode,level,bot:bot?.id||null,assisted,sessionId}));}catch{/* Play remains available without storage. */}
+ if(game.winner)try{writeProgress(recordGame(readProgress(),{id:sessionId,bot:mode==='local'?'local':bot?.id||'iris',winner:game.winner,humanSide:'w',reason:game.reason,turns:game.ply}));}catch{/* Stats must not block a game. */}
+}
 function render(animate=false) {
   const focused=document.activeElement?.id;available=actions(game);
   renderChess();renderTrack('left');renderTrack('right');
@@ -61,7 +66,7 @@ function render(animate=false) {
     const canExit=filtered().some(a=>matchesSource(a)&&a.type==='race'&&a.to==='off')&&game.turn===side;
     off.disabled=!human()||!canExit;off.classList.toggle('legal',canExit);
   }
-  $('#role-w').textContent=mode==='ai'?'VOUS':'JOUEUR 1';$('#role-b').textContent=mode==='ai'?'ORDINATEUR':'JOUEUR 2';
+  $('#role-w').textContent=mode==='ai'?'VOUS':'JOUEUR 1';$('#role-b').textContent=mode==='ai'?(bot?bot.name.toUpperCase():'ORDINATEUR'):'JOUEUR 2';
   $('#level-label').hidden=mode!=='ai';document.body.classList.toggle('busy',!human()&&!game.winner);
   $('#status').textContent=game.notice;
   $('#turn-caption').textContent=game.winner?'FIN DE PARTIE':game.phase==='opening'?'LE PREMIER LANCER':`${sideName(game.turn).toUpperCase()} · TOUR ${game.ply+1}`;
@@ -74,10 +79,21 @@ function render(animate=false) {
   $('#turn-number').textContent='Tour '+Math.min(game.ply+1,400);
   $('#history').replaceChildren(...game.log.slice().reverse().map(text=>{const li=document.createElement('li');li.textContent=text;return li;}));
   if(focused&&document.getElementById(focused))document.getElementById(focused).focus({preventScroll:true});
+  if(training){$('#roll').disabled=true;$('#roll').textContent='Dés de l’exercice';$('#turn-caption').textContent=lesson?'LEÇON GUIDÉE':'PROBLÈME TACTIQUE';$('#instruction').textContent=training.complete?'Objectif terminé. Consultez l’explication et continuez votre parcours.':introActive?'Suivez les bulles du guide, puis réalisez le mouvement.':exercise.objective;}
+  $('#match-guidance').hidden=!assisted||Boolean(training)||invalidTraining;
+  if(assisted&&!training){const a=filtered().find(matchesSource);$('#match-guidance-text').textContent=a?actionExplanation(game,a):game.phase==='opening'?'Le plus haut dé détermine le premier joueur. Vous aurez ensuite les deux valeurs pour votre premier tour.':game.phase==='roll'?'Lancez les dés, puis choisissez entre l’échiquier et la course.':inCheck(game.chess,game.turn)?'Le roi est prioritaire. Répondez à l’échec avant de jouer la course.':'Explorez les deux plateaux. Cliquez « Un conseil » pour une suggestion expliquée, pas une promesse de meilleur coup.';}
+  coach?.update(feedback);
   save();
 }
 function cancelAI(){generation++;if(timer!==null){clearTimeout(timer);timer=null;}}
-function commitAction(id) {try{game=play(game,id);selected=null;selectedDice=[];render();scheduleAI();}catch(e){$('#instruction').textContent=e.message;}}
+function commitAction(id) {try{
+ normalBubble.hide();coach?.close();
+ if(training){const result=attemptTraining(training,id);training=result.session;game=training.game;feedback=result.message;selected=null;selectedDice=[];
+  if(training.complete){const p=recordExercise(readProgress(),exercise.id,{stars:stars(training),kind:lesson?'lesson':'puzzle',lesson:lesson?.id||null});if(!writeProgress(p))feedback+=' Stockage indisponible : résultat conservé pour cette page seulement.';}
+  render();return;
+ }
+ game=play(game,id);selected=null;selectedDice=[];render();scheduleAI();
+}catch(e){$('#instruction').textContent=e.message;}}
 function chooseDestination(candidates) {
   if(!candidates.length)return false;
   const different=[...new Map(candidates.map(a=>[a.promotion||'',a])).values()];
@@ -115,24 +131,24 @@ $('#dice').addEventListener('click',event=>{
 function throwDice(){return [1+Math.floor(Math.random()*6),1+Math.floor(Math.random()*6)];}
 $('#roll').addEventListener('click',()=>{if(!human()||!['opening','roll'].includes(game.phase))return;try{game=roll(game,throwDice());selected=null;selectedDice=[];render(true);scheduleAI();}catch(e){$('#instruction').textContent=e.message;}});
 function scheduleAI() {
-  cancelAI();if(mode!=='ai'||game.turn!=='b'||game.phase==='opening'||game.winner)return;
+  cancelAI();if(training||invalidTraining||mode!=='ai'||game.turn!=='b'||game.phase==='opening'||game.winner)return;
   const token=generation,revision=game.revision;
   timer=setTimeout(()=>{
     if(token!==generation||revision!==game.revision)return;
     timer=null;
     try {
       if(game.phase==='roll'){game=roll(game,throwDice());render(true);scheduleAI();}
-      else {const id=choose(game,level);if(id)commitAction(id);else $('#instruction').textContent='Aucun coup disponible. Vous pouvez reprendre en mode deux joueurs.';}
+      else {const id=bot?chooseBot(game,bot.id):choose(game,level);if(id)commitAction(id);else $('#instruction').textContent='Aucun coup disponible. Vous pouvez reprendre en mode deux joueurs.';}
     }catch(e){$('#instruction').textContent='Le coup n’a pas été exécuté : '+e.message;}
   },game.phase==='roll'?600:380);
 }
 $('#mode').addEventListener('change',event=>{cancelAI();mode=event.target.value==='local'?'local':'ai';selected=null;selectedDice=[];render();scheduleAI();});
-$('#level').addEventListener('change',event=>{level=event.target.value;save();});
+$('#level').addEventListener('change',event=>{bot=BOTS.find(b=>b.id===event.target.value)||null;if(!bot)level=event.target.value;$('#match-context').textContent=bot?'CONTRE '+bot.name.toUpperCase():'PARTIE LIBRE';render();});
 $('#clear-selection').addEventListener('click',()=>{selected=null;selectedDice=[];render();});
-$('#hint').addEventListener('click',()=>{if(!human()||game.phase!=='play')return;const id=choose(game,'hard'),a=available.find(a=>a.id===id);if(a){selected={type:a.type,from:a.from};selectedDice=game.dice.flatMap((_,i)=>a.mask&(1<<i)?[i]:[]);render();$('#selection-info').textContent='Conseil : '+(a.type==='chess'?pieceName[game.chess.board[a.from][1]]+' '+squareName(a.from)+' → '+squareName(a.to):(a.from==='bar'?'Barre':a.from+1)+' → '+(a.to==='off'?'sortie':a.to+1))+' · paiement '+payment(a);}});
+$('#hint').addEventListener('click',()=>{if(training){$('#training-hint')?.click();return;}if(!human()||game.phase!=='play')return;const id=choose(game,'hard'),a=available.find(a=>a.id===id);if(a){highlight(a);const text=actionExplanation(game,a);$('#selection-info').textContent='Suggestion : '+text;if(assisted){normalBubble.show({title:'Un coup à considérer',text,anchor:sourceTarget(a,game.turn)});}}});
 $('#rules-button').addEventListener('click',()=>$('#rules-dialog').showModal());$('#close-rules').addEventListener('click',()=>$('#rules-dialog').close());
 $('#new-game').addEventListener('click',()=>$('#new-dialog').showModal());$('#cancel-new').addEventListener('click',()=>$('#new-dialog').close());
-$('#confirm-new').addEventListener('click',()=>{cancelAI();game=createGame();selected=null;selectedDice=[];promotions=[];$('#new-dialog').close();$('#promotion-dialog').close();render();});
+$('#confirm-new').addEventListener('click',()=>{cancelAI();normalBubble.hide();sessionId=globalThis.crypto?.randomUUID?.()||('local-'+Date.now());game=createGame();selected=null;selectedDice=[];promotions=[];$('#new-dialog').close();$('#promotion-dialog').close();render();});
 $('#promotion-choices').addEventListener('click',event=>{const button=event.target.closest('[data-promote]');if(!button)return;const a=promotions.find(a=>a.promotion===button.dataset.promote);$('#promotion-dialog').close();if(a)commitAction(a.id);promotions=[];});
 $('#view-button').addEventListener('click',event=>{const flat=document.body.classList.toggle('flat');event.target.textContent=flat?'Vue à plat':'Vue en relief';event.target.setAttribute('aria-pressed',String(!flat));});
 function focusBoard(which,behavior='smooth') {
@@ -140,4 +156,21 @@ function focusBoard(which,behavior='smooth') {
   scroll.scrollTo({left:scroll.scrollLeft+r.left-s.left-(scroll.clientWidth-r.width)/2,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':behavior});
 }
 for(const button of document.querySelectorAll('[data-focus]'))button.addEventListener('click',()=>focusBoard(button.dataset.focus));
-render();requestAnimationFrame(()=>{if(innerWidth<950)focusBoard('chess','auto');});scheduleAI();
+function highlight(a){selected={type:a.type,from:a.from};selectedDice=game.dice.flatMap((_,i)=>a.mask&(1<<i)?[i]:[]);render();}
+function focusTarget(selector){
+ const point=/^#point-(\d+)$/.exec(selector);if(point)focusBoard(+point[1]>=6&&+point[1]<=17?'left':'right','auto');
+ else if(selector.startsWith('#sq-'))focusBoard('chess','auto');
+ const el=document.querySelector(selector);el?.scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'});
+}
+const normalBubble=bubble();
+$('#explain-move').addEventListener('click',()=>normalBubble.show({title:'Votre prochain choix',text:$('#match-guidance-text').textContent,anchor:selected?.type==='chess'?'#sq-'+squareName(selected.from):'#dice'}));
+if(training){
+ document.body.classList.add('training');$('#mode').disabled=true;$('#level').disabled=true;$('#new-game').hidden=true;
+ $('#back-to-lobby').href='./index.html#'+(lesson?'learn':'puzzles');$('#match-context').textContent=lesson?'ACADÉMIE · '+lesson.title.toUpperCase():'PROBLÈME · '+exercise.title.toUpperCase();
+ coach=trainingCoach({exercise,lesson,getSession:()=>training,onHint(){training=revealHint(training);},onReveal(){training=showSolution(training);const id=solutionAction(training);if(id)commitAction(id);},onRetry(){training=startTraining(exercise.id);game=training.game;selected=null;selectedDice=[];feedback='';render();},onPractice(){introActive=false;render();},onIntro(){introActive=true;render();},focus:focusTarget,onHighlight:highlight});
+}else if(invalidTraining){
+ $('#match-context').textContent='EXERCICE INTROUVABLE';$('#learning-panel').hidden=false;$('#learning-panel').innerHTML='<h2>Ce contenu n’existe pas.</h2><p>Retrouvez les exercices disponibles dans le salon.</p><a href="./index.html#puzzles">Retour aux problèmes →</a>';document.body.classList.add('training');
+}else{$('#match-context').textContent=bot?'CONTRE '+bot.name.toUpperCase()+' · '+(assisted?'ACCOMPAGNÉ':'DÉFI'):mode==='local'?'DEUX JOUEURS · MÊME ÉCRAN':'PARTIE LIBRE';}
+window.addEventListener('pagehide',()=>{cancelAI();normalBubble.hide();coach?.close();});
+window.addEventListener('pageshow',()=>scheduleAI());
+render();requestAnimationFrame(()=>{if(innerWidth<950)focusBoard('chess','auto');coach?.start();});scheduleAI();
