@@ -1,0 +1,16 @@
+.worktrees/
+.superpowers/
+.venv/
+node_modules/
+__pycache__/
+*.pyc
+*-preview.png
+*.log
+.DS_Store
+lobby-desktop.png
+lobby-mobile.png
+academy-mobile.png
+bots-desktop.png
+academy-desktop.png
+analysis-desktop.png
+analysis-mobile.png

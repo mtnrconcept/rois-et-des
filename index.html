@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="fr">
+<head>
+ <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+ <meta name="theme-color" content="#171611">
+ <meta name="description" content="Le salon Échgammon : jouez contre six ordinateurs, résolvez des problèmes et apprenez pas à pas les échecs et la course à dés.">
+ <title>Échgammon — Le Salon</title>
+ <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2324160e'/%3E%3Cpath d='M12 20l10 13 10-20 10 20 10-13-6 29H18z' fill='%23d6b36c'/%3E%3C/svg%3E">
+ <link rel="stylesheet" href="./echgammon/lobby.css">
+</head>
+<body class="lobby">
+ <a class="skip-link" href="#content">Aller au contenu</a>
+ <aside class="sidebar">
+  <a class="salon-logo" href="#home"><span class="logo-symbol" aria-hidden="true">♔</span><span>ÉCHGAMMON<small>CLASSIQUE ROYAL</small></span></a>
+  <p class="nav-kicker">VOTRE SALON DE JEU</p>
+  <nav id="app-nav" aria-label="Navigation principale"></nav>
+  <div class="side-academy"><span aria-hidden="true">✧</span><strong>L’art de mieux jouer.</strong><p>Un concept. Un essai.<br>Un nouveau réflexe.</p><a href="#learn">Entrer à l’académie <b>↗</b></a></div>
+  <div class="local-profile"><span class="profile-avatar">J</span><div><strong>Joueur local</strong><small>Votre progression, ici.</small></div><span class="local-dot" title="Sans compte"></span></div>
+ </aside>
+ <div class="lobby-main">
+  <header class="topbar"><div><span class="breadcrumb">LE CLUB</span><span class="crumb-divider">/</span><span id="page-name">Accueil</span></div><div class="topbar-right"><span class="privacy-chip">Sans compte · sur cet appareil</span><a href="#progress" class="progress-shortcut" aria-label="Voir ma progression"><span aria-hidden="true">✦</span> <b id="top-stars">0</b></a></div></header>
+  <main id="content" tabindex="-1"></main>
+  <footer class="lobby-footer"><span>ÉCHGAMMON <i>Classique Royal</i></span><span>Deux mondes. Les mêmes dés. Une seule victoire.</span><span>ÉDITION SALON · 4.0</span></footer>
+ </div>
+ <dialog id="confirm-dialog" class="salon-dialog"><h2 id="confirm-title">Confirmer</h2><p id="confirm-copy"></p><div class="dialog-buttons"><button id="confirm-cancel" class="btn secondary">Annuler</button><button id="confirm-accept" class="btn gold">Continuer</button></div></dialog>
+ <div id="toast" role="status" aria-live="polite" hidden></div>
+ <noscript><p class="noscript">Activez JavaScript pour accéder au salon et jouer à Échgammon.</p></noscript>
+ <script type="module" src="./echgammon/lobby.mjs"></script>
+</body>
+</html>
