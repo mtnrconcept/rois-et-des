@@ -1,13 +1,13 @@
 """Lobby/academy journeys. OFFLINE_BROWSER=1 runs real assets with in-memory storage.
 Only the offline test adapter substitutes URL query inputs; production has no test hooks.
 """
-import base64, json, os, pathlib, re, shutil, socket, subprocess, time
+import base64, json, os, pathlib, re, shutil, subprocess
 from playwright.sync_api import sync_playwright
+from browser_server import BrowserServer
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 OFFLINE=os.environ.get('OFFLINE_BROWSER')=='1'
-with socket.socket() as s:s.bind(('127.0.0.1',0));PORT=s.getsockname()[1]
-BASE=f'http://127.0.0.1:{PORT}'
-server=subprocess.Popen(['python','-m','http.server',str(PORT),'--bind','127.0.0.1'],cwd=ROOT,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+server=BrowserServer(ROOT)
+BASE=server.base_url
 def mount(page,kind='lobby',query='',storage=None):
     filename='index.html' if kind=='lobby' else 'play.html'
     if not OFFLINE:
@@ -30,6 +30,7 @@ def mount(page,kind='lobby',query='',storage=None):
     page.evaluate('''s=>{const v=new Map(Object.entries(s||{}));Object.defineProperty(window,'localStorage',{value:{getItem:k=>v.get(k)??null,setItem:(k,a)=>v.set(k,String(a)),removeItem:k=>v.delete(k)},configurable:true});}''',storage)
     for css in styles:page.add_style_tag(content=(ROOT/css).read_text())
     page.evaluate('u=>import(u)',url('lobby.mjs' if kind=='lobby' else 'view.mjs'))
+    if kind!='lobby':page.evaluate('u=>import(u)',url('match-layout.mjs'))
 try:
     with sync_playwright() as p:
         browser=p.chromium.launch(headless=True,executable_path=shutil.which('chromium'),args=['--no-sandbox'])
@@ -60,7 +61,7 @@ try:
         assert page.evaluate("localStorage.getItem('echgammon.royal.v3')") is None
         def open_view(kind='play',query='',storage=None,ctx=None):
             target=(ctx or context).new_page();target.on('pageerror',lambda e:errors.append(str(e)))
-            mount(target,kind,query,storage);target.wait_for_selector('#home-title' if kind=='lobby' else '#sq-e2',timeout=3000)
+            mount(target,kind,query,storage);target.wait_for_selector('#home-title' if kind=='lobby' else '#sq-e2',state='attached',timeout=3000)
             return target
         def stored(target):
             return target.evaluate("Object.fromEntries(['echgammon.royal.v3','echgammon.academy.v1'].map(k=>[k,localStorage.getItem(k)]).filter(x=>x[1]))")
@@ -141,6 +142,7 @@ try:
         # Real bot selection and assisted-mode explanations are connected to gameplay.
         page.close();page=open_view(query='?bot=astra&fresh=1&assist=1')
         assert page.locator('#level').input_value()=='astra'
+        page.locator('#match-options').click()
         assert page.locator('#match-guidance').is_visible()
         assert 'ASTRA' in page.locator('#match-context').inner_text()
         page.locator('#explain-move').click();assert page.locator('.coach-bubble:visible').count()==1
@@ -149,6 +151,7 @@ try:
         # An explanation must close as soon as its move/position changes.
         page.close();saved['assisted']=True
         page=open_view(storage={'echgammon.royal.v3':json.dumps(saved)})
+        page.locator('#match-options').click()
         page.locator('#explain-move').click();assert page.locator('.coach-bubble:visible').count()==1
         page.locator('#sq-e2').dispatch_event('click');page.locator('#sq-e4').dispatch_event('click')
         assert page.locator('.coach-bubble:visible').count()==0, 'Outdated explanation remains over the new position'
@@ -170,12 +173,14 @@ try:
             rect=page.locator('.coach-bubble:visible').bounding_box()
             assert rect['x']>=0 and rect['x']+rect['width']<=391 and rect['y']>=0 and rect['y']+rect['height']<=845
             page.locator('.coach-bubble:visible #coach-next').tap()
+        page.locator('#match-help').tap()
         for _ in range(3):page.locator('#training-hint').tap()
         page.screenshot(path=str(ROOT/'academy-mobile.png'),full_page=True)
         page.keyboard.press('Escape');page.locator('#bar-w').tap();page.locator('#point-22').tap()
+        page.locator('#match-help').tap()
         assert page.locator('#training-success').is_visible()
         assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
         assert not errors,errors
         print(json.dumps({'browser':'Chromium','offlineAssets':OFFLINE,'storageAdapter':'in-memory' if OFFLINE else 'native','catalogueSolvedThroughUI':len(plans),'botProfiles':6,'lessonFlows':2,'desktop':'1440x1000','tablet':'820x1000','touch':'390x844','consoleErrors':errors}))
         browser.close()
-finally:server.terminate();server.wait(timeout=5)
+finally:server.close()

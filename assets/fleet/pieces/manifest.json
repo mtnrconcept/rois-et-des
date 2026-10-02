@@ -1,0 +1,326 @@
+{
+  "wK": {
+    "vertices": 12573,
+    "polygons": 11297,
+    "materials": 10,
+    "bounds_min": [
+      -0.3749999701976776,
+      -0.35499998927116394,
+      0.0
+    ],
+    "bounds_max": [
+      0.36000001430511475,
+      0.35499998927116394,
+      1.646399974822998
+    ],
+    "bytes": 145304,
+    "animations": [
+      "ATTACK",
+      "DEFEAT",
+      "HIT",
+      "IDLE",
+      "MOVE",
+      "VICTORY"
+    ],
+    "primitives": 10,
+    "file": "wK.glb",
+    "draco": true
+  },
+  "wQ": {
+    "vertices": 15109,
+    "polygons": 13729,
+    "materials": 10,
+    "bounds_min": [
+      -0.3999999463558197,
+      -0.35499998927116394,
+      0.0
+    ],
+    "bounds_max": [
+      0.36000001430511475,
+      0.35499998927116394,
+      1.655500054359436
+    ],
+    "bytes": 160308,
+    "animations": [
+      "ATTACK",
+      "DEFEAT",
+      "HIT",
+      "IDLE",
+      "MOVE",
+      "VICTORY"
+    ],
+    "primitives": 10,
+    "file": "wQ.glb",
+    "draco": true
+  },
+  "wR": {
+    "vertices": 5317,
+    "polygons": 4763,
+    "materials": 5,
+    "bounds_min": [
+      -0.35499998927116394,
+      -0.35499998927116394,
+      0.0
+    ],
+    "bounds_max": [
+      0.35499998927116394,
+      0.35499998927116394,
+      1.1649999618530273
+    ],
+    "bytes": 105944,
+    "animations": [
+      "ATTACK",
+      "DEFEAT",
+      "HIT",
+      "IDLE",
+      "MOVE",
+      "VICTORY"
+    ],
+    "primitives": 5,
+    "file": "wR.glb",
+    "draco": true
+  },
+  "wB": {
+    "vertices": 11648,
+    "polygons": 10520,
+    "materials": 10,
+    "bounds_min": [
+      -0.375,
+      -0.35499998927116394,
+      0.0
+    ],
+    "bounds_max": [
+      0.35499998927116394,
+      0.35499998927116394,
+      1.593400001525879
+    ],
+    "bytes": 141492,
+    "animations": [
+      "ATTACK",
+      "DEFEAT",
+      "HIT",
+      "IDLE",
+      "MOVE",
+      "VICTORY"
+    ],
+    "primitives": 10,
+    "file": "wB.glb",
+    "draco": true
+  },
+  "wN": {
+    "vertices": 5668,
+    "polygons": 4968,
+    "materials": 4,
+    "bounds_min": [
+      -0.35499998927116394,
+      -0.40400001406669617,
+      0.0
+    ],
+    "bounds_max": [
+      0.35499998927116394,
+      0.36000001430511475,
+      1.4300000667572021
+    ],
+    "bytes": 102356,
+    "animations": [
+      "ATTACK",
+      "DEFEAT",
+      "HIT",
+      "IDLE",
+      "MOVE",
+      "VICTORY"
+    ],
+    "primitives": 4,
+    "file": "wN.glb",
+    "draco": true
+  },
+  "wP": {
+    "vertices": 10234,
+    "polygons": 9034,
+    "materials": 10,
+    "bounds_min": [
+      -0.36000001430511475,
+      -0.35499998927116394,
+      0.0
+    ],
+    "bounds_max": [
+      0.38142654299736023,
+      0.35499998927116394,
+      1.2285000085830688
+    ],
+    "bytes": 137376,
+    "animations": [
+      "ATTACK",
+      "DEFEAT",
+      "HIT",
+      "IDLE",
+      "MOVE",
+      "VICTORY"
+    ],
+    "primitives": 10,
+    "file": "wP.glb",
+    "draco": true
+  },
+  "bK": {
+    "vertices": 13798,
+    "polygons": 12601,
+    "materials": 10,
+    "bounds_min": [
+      -0.3749999701976776,
+      -0.35499998927116394,
+      0.0
+    ],
+    "bounds_max": [
+      0.36000001430511475,
+      0.35499998927116394,
+      1.5729999542236328
+    ],
+    "bytes": 153460,
+    "animations": [
+      "ATTACK",
+      "DEFEAT",
+      "HIT",
+      "IDLE",
+      "MOVE",
+      "VICTORY"
+    ],
+    "primitives": 10,
+    "file": "bK.glb",
+    "draco": true
+  },
+  "bQ": {
+    "vertices": 16342,
+    "polygons": 15081,
+    "materials": 10,
+    "bounds_min": [
+      -0.3999999463558197,
+      -0.35499998927116394,
+      0.0
+    ],
+    "bounds_max": [
+      0.36000001430511475,
+      0.35499998927116394,
+      1.6337305307388306
+    ],
+    "bytes": 168568,
+    "animations": [
+      "ATTACK",
+      "DEFEAT",
+      "HIT",
+      "IDLE",
+      "MOVE",
+      "VICTORY"
+    ],
+    "primitives": 10,
+    "file": "bQ.glb",
+    "draco": true
+  },
+  "bR": {
+    "vertices": 7672,
+    "polygons": 7064,
+    "materials": 4,
+    "bounds_min": [
+      -0.35499998927116394,
+      -0.42899999022483826,
+      0.0
+    ],
+    "bounds_max": [
+      0.35499998927116394,
+      0.35499998927116394,
+      1.2527400255203247
+    ],
+    "bytes": 110420,
+    "animations": [
+      "ATTACK",
+      "DEFEAT",
+      "HIT",
+      "IDLE",
+      "MOVE",
+      "VICTORY"
+    ],
+    "primitives": 4,
+    "file": "bR.glb",
+    "draco": true
+  },
+  "bB": {
+    "vertices": 12105,
+    "polygons": 11068,
+    "materials": 10,
+    "bounds_min": [
+      -0.35499998927116394,
+      -0.3889999985694885,
+      0.0
+    ],
+    "bounds_max": [
+      0.35499998927116394,
+      0.35499998927116394,
+      1.375999927520752
+    ],
+    "bytes": 146404,
+    "animations": [
+      "ATTACK",
+      "DEFEAT",
+      "HIT",
+      "IDLE",
+      "MOVE",
+      "VICTORY"
+    ],
+    "primitives": 10,
+    "file": "bB.glb",
+    "draco": true
+  },
+  "bN": {
+    "vertices": 5908,
+    "polygons": 5258,
+    "materials": 4,
+    "bounds_min": [
+      -0.35499998927116394,
+      -0.40400001406669617,
+      0.0
+    ],
+    "bounds_max": [
+      0.35499998927116394,
+      0.36000001430511475,
+      1.4300000667572021
+    ],
+    "bytes": 102972,
+    "animations": [
+      "ATTACK",
+      "DEFEAT",
+      "HIT",
+      "IDLE",
+      "MOVE",
+      "VICTORY"
+    ],
+    "primitives": 4,
+    "file": "bN.glb",
+    "draco": true
+  },
+  "bP": {
+    "vertices": 10878,
+    "polygons": 9811,
+    "materials": 9,
+    "bounds_min": [
+      -0.36000001430511475,
+      -0.35499998927116394,
+      0.0
+    ],
+    "bounds_max": [
+      0.35499998927116394,
+      0.35499998927116394,
+      1.0069999694824219
+    ],
+    "bytes": 141524,
+    "animations": [
+      "ATTACK",
+      "DEFEAT",
+      "HIT",
+      "IDLE",
+      "MOVE",
+      "VICTORY"
+    ],
+    "primitives": 9,
+    "file": "bP.glb",
+    "draco": true
+  }
+}

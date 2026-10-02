@@ -2,13 +2,13 @@
 OFFLINE_BROWSER=1 resolves local modules to data URLs (including the real Worker)
 and uses optional in-memory storage. It makes no network-policy changes.
 """
-import base64,json,os,pathlib,re,shutil,socket,subprocess,time
+import base64,json,os,pathlib,re,shutil,subprocess
 from playwright.sync_api import sync_playwright
+from browser_server import BrowserServer
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 OFFLINE=os.environ.get('OFFLINE_BROWSER')=='1'
-with socket.socket() as s:s.bind(('127.0.0.1',0));PORT=s.getsockname()[1]
-BASE=f'http://127.0.0.1:{PORT}'
-server=subprocess.Popen(['python','-m','http.server',str(PORT),'--bind','127.0.0.1'],cwd=ROOT,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+server=BrowserServer(ROOT)
+BASE=server.base_url
 errors=[]
 def fixture(name='tour-capture',bot=None):
  script="import{exerciseState}from './echgammon/catalog.mjs';const game=exerciseState("+json.dumps(name)+");"+("game.turn='b';game.dice=[3,3,3,3];game.used=[false,false,false,false];" if bot else "")+"console.log(JSON.stringify({game,mode:"+json.dumps('ai' if bot else 'local')+",level:'hard',bot:"+json.dumps(bot)+",assisted:true}));"
@@ -90,4 +90,4 @@ try:
   assert not errors,errors
   print(json.dumps({'worker':'real module worker','audio':'native AudioBufferSourceNode','storage':'memory' if OFFLINE else 'native','checks':24,'consoleErrors':errors}))
   browser.close()
-finally:server.terminate();server.wait(timeout=5)
+finally:server.close()

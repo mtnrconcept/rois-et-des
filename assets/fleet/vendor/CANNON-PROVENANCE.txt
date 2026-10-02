@@ -1,0 +1,12 @@
+cannon-es 0.20.0
+Official project: https://github.com/pmndrs/cannon-es
+Documentation: https://pmndrs.github.io/cannon-es/docs/
+Release: https://github.com/pmndrs/cannon-es/releases/tag/v0.20.0
+Package: https://registry.npmjs.org/cannon-es/0.20.0
+Tarball: https://registry.npmjs.org/cannon-es/-/cannon-es-0.20.0.tgz
+Verified tarball integrity: sha512-eZhWTZIkFOnMAJOgfXJa9+b3kVlvG+FX4mdkpePev/w/rP5V8NRquGyEozcjPfEoXUlb+p7d9SUcmDSn14prOA==
+Vendored file: package/dist/cannon-es.js (unmodified ESM bundle)
+SHA-256: f0700cbd3a482954949b9d58c1b0f76dcc74767750297647a39d8c40dd63d37c
+License: MIT; full original notice in CANNON-LICENSE.txt.
+No runtime dependencies. No package lifecycle script was executed.
+Retrieved and integrity-checked: 2026-10-02.
