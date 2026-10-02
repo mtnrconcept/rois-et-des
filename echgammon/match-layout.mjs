@@ -1,6 +1,7 @@
 // Layout only: the existing view remains the owner of rules, selection and saves.
 const $ = selector => document.querySelector(selector);
 const compactMedia = matchMedia('(max-width: 1000px), (max-height: 600px)');
+const portraitMedia = matchMedia('(max-width: 600px) and (orientation: portrait)');
 const options = $('#match-options-dialog');
 const help = $('#match-help-dialog');
 const tools = $('.tools');
@@ -51,6 +52,7 @@ document.addEventListener('match:focus-board', event => setPane(event.detail?.wh
 function updateMode() {
   const compact = compactMedia.matches;
   document.body.classList.toggle('match-compact', compact);
+  document.body.classList.toggle('match-portrait', portraitMedia.matches);
   for (const node of [tools, sound, teaching]) {
     const target = node === teaching ? $('#match-help-content') : $('#match-options-content');
     if (compact) {
@@ -72,14 +74,25 @@ function sizeBoard() {
   if (!room || room.clientWidth < 20 || room.clientHeight < 20) return;
   const compact = compactMedia.matches;
   const roomStyle = getComputedStyle(room), cabinetStyle = getComputedStyle($('#cabinet'));
-  const number = (style, prop) => parseFloat(style[prop]) || 0;
+  const number = (style, prop) => parseFloat(prop.startsWith('--') ? style.getPropertyValue(prop) : style[prop]) || 0;
   const width = Math.max(0, room.clientWidth - number(roomStyle,'paddingLeft') - number(roomStyle,'paddingRight'));
   const height = Math.max(0, room.clientHeight - number(roomStyle,'paddingTop') - number(roomStyle,'paddingBottom') - 9);
   const horizontal = number(cabinetStyle,'paddingLeft') + number(cabinetStyle,'paddingRight') + 4;
   const vertical = number(cabinetStyle,'paddingTop') + number(cabinetStyle,'paddingBottom') + 4;
-  // Each active panel is square; use its actual CSS surround, including zoom.
-  const cabinetWidth = Math.min(width, compact ? height - vertical + horizontal : (height - vertical) * 4.25 / 2.25 + horizontal + number(cabinetStyle,'columnGap') * 2);
+  // The portrait overview is a square chess board between two race strips.
+  // The same 24 buttons are laid out by CSS; focusing a track keeps its square zoom.
+  const overview = portraitMedia.matches && document.body.dataset.matchPane === 'chess';
+  const raceRatio = number(cabinetStyle,'--portrait-race-ratio') || .2;
+  const portraitRatio = (number(cabinetStyle,'--portrait-chess-ratio') || .8) + raceRatio * 2;
+  const cabinetWidth = Math.min(width, overview ? (height - vertical - number(cabinetStyle,'rowGap') * 2) / portraitRatio + horizontal : compact ? height - vertical + horizontal : (height - vertical) * 4.25 / 2.25 + horizontal + number(cabinetStyle,'columnGap') * 2);
   stage.style.setProperty('--cabinet-width', `${Math.max(80, Math.floor(cabinetWidth))}px`);
+  const stripHeight = Math.max(20, Math.floor((cabinetWidth - horizontal) * raceRatio));
+  stage.style.setProperty('--race-strip-height', `${stripHeight}px`);
+  if (overview) {
+    const checkerWidth = Math.min(raceRatio < .2 ? 12 : 17, (cabinetWidth - horizontal - 18) / 12 * .85);
+    stage.style.setProperty('--checker-step', `${Math.max(1, (stripHeight - checkerWidth - 9) / 4)}px`);
+    return;
+  }
   const pointHeight = Math.max($('#track-left').clientHeight, $('#track-right').clientHeight) / 2 - 9;
   stage.style.setProperty('--checker-step', `${Math.max(7, Math.min(20, (pointHeight - 38) / 5))}px`);
 }
@@ -99,6 +112,7 @@ const observer = new ResizeObserver(sizeBoard);
 function observeBoard() { observer.observe($('#board-scroll')); sizeBoard(); }
 observeBoard();
 compactMedia.addEventListener('change', updateMode);
+portraitMedia.addEventListener('change', updateMode);
 window.addEventListener('resize', sizeBoard);
 window.addEventListener('pagehide', () => observer.disconnect());
 window.addEventListener('pageshow', () => { observeBoard(); updateMode(); });

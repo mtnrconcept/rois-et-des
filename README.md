@@ -8,6 +8,8 @@ Les boutons Vue d'ensemble / Échiquier / Piste gauche / Piste droite cadrent la
 
 Les jets de dés utilisent une simulation physique locale (Cannon-es) : chutes, rotations, rebonds et collisions sur l'échiquier. Les faces au repos donnent les valeurs jouées, pour les humains comme pour les bots. Le lancer est visible dans les deux présentations. Le plateau et ses commandes s'adaptent à la hauteur de l'écran ; l'aide, les options et le journal restent accessibles dans des panneaux sur téléphone.
 
+Sur téléphone en portrait, la vue classique montre l'échiquier entre deux bandes de 12 pointes de course, comme sur la référence mobile. Toutes les pièces et tous les pions restent dans la même partie. « Piste gauche » et « Piste droite » agrandissent la piste choisie ; « Échiquier » revient au plateau complet. Les dés physiques se lancent sur l'échiquier central.
+
 Documentation : [intégration](docs/royal-fleet-integration.md), [modèles et effets](docs/royal-fleet-art.md), [cadrage et dés physiques](docs/viewport-and-dice.md). Vérification WebGL : `python -X utf8 tests/fleet.browser.py`. Les tests HTTP utilisent un serveur local qui fournit explicitement le bon type MIME des modules JavaScript sous Windows.
 
 Jeu web statique adapté de l'affiche fournie par l'utilisateur : échiquier 8×8 avec 32 pièces, pistes latérales totalisant 24 pointes, 15 pions de course par couleur et deux dés partagés. Gagnez par mat ou en sortant les 15 pions. Mode deux joueurs sur le même appareil, six bots de personnalités et de niveaux différents, problèmes tactiques et académie guidée.

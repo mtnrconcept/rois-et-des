@@ -7,9 +7,27 @@ aux barres/sorties et à la console. `match-layout.mjs` mesure l'espace restant 
 dimensionne le plateau classique. La scène Blender occupe cette même surface.
 Sur ordinateur, l'aide pédagogique a son propre défilement. En mode compact
 (largeur ≤ 1000 px ou hauteur ≤ 600 px), les réglages, le journal et l'aide sont
-dans des dialogues natifs accessibles au clavier. Les trois sections du plateau
-classique deviennent des onglets. Sélections et guides peuvent changer d'onglet
-sans changer la partie. En paysage court, les commandes passent à droite.
+dans des dialogues natifs accessibles au clavier. En portrait jusqu'à 600 px de
+largeur, la vue centrale montre le plateau classique complet : les pointes 13 à
+24 forment une bande au-dessus de l'échiquier et les pointes 12 à 1 une bande
+au-dessous. Les 24 boutons de course conservent leurs identifiants, leurs comptes
+et leurs actions ; aucune pièce ni aucun pion n'est dupliqué. Les pions peuvent
+être joués directement depuis cette vue.
+
+Lorsque la hauteur portrait ne dépasse pas 680 px, les bandes de course sont
+moins hautes et l'échiquier occupe une plus grande part de la largeur disponible.
+Les marges du coffret et l'espacement des piles s'adaptent aussi ; les deux bandes
+et les commandes restent présentes. Les compteurs répétés sous les noms sont
+masqués dans ce seul format court ; les barres et zones de sortie les affichent
+toujours. Le dimensionnement lit les proportions CSS
+effectives, au lieu de conserver celles du grand format.
+
+Les boutons Piste gauche et Piste droite agrandissent les douze pointes de la
+piste choisie. Le bouton central revient à la vue complète en portrait. Dans les
+autres formats compacts, les trois sections restent des vues séparées. Sélections
+et guides peuvent changer de vue sans changer la partie. La présentation 3D
+conserve ses caméras ; son alternative accessible bénéficie aussi des deux bandes
+en portrait. En paysage court, les commandes passent à droite.
 
 ## Physique, rendu et règles
 
@@ -49,7 +67,14 @@ rejette la promesse et libère les contrôles. Le Worker dispose d'un délai lim
 - `npm test` : règles, assets, cycle de présentation, physique et lecture des faces.
 - `npm run check` et `npm run build` : syntaxe de tous les modules de production.
 - `python tests/match-layout.browser.py` : bornes réelles des contrôles et du plateau
-  à 1920×1080, 1440×900, 1366×768, 390×844, 844×390 et 720×450, parcours d'aide.
+  à 1920×1080, 1440×900, 1366×768, 844×390 et 720×450, parcours d'aide. À
+  440×956, 390×844, 360×740 et 320×640 : les 24 pointes visibles occupent bien
+  deux bandes ordonnées de douze autour de l'échiquier, les 32 pièces et les
+  comptes des 30 pions sont conservés. Le parcours joue réellement 9 → 6 depuis
+  la vue complète, agrandit chaque piste puis revient, change d'orientation et
+  vérifie aussi le plateau accessible depuis la 3D. Un vrai lancer à 390×844
+  vérifie l'alignement du canvas de dés sur l'échiquier central et l'égalité entre
+  les faces issues du Worker physique et les valeurs enregistrées par le jeu.
 - `python tests/dice.browser.py` : vrais Workers/WebGL, faces affichées et valeurs
   enregistrées, double clic, reset, bot, refus/réessai, rendu accessible et perte
   de contexte. Le seul Worker substitué est le cas explicitement en échec.
