@@ -1,0 +1,33 @@
+# Provision only after approving the paid service and persistent disk.
+services:
+  - type: web
+    name: rois-et-des-online
+    runtime: node
+    repo: https://github.com/mtnrconcept/rois-et-des
+    branch: feat/online-platform-20261022
+    region: frankfurt
+    plan: starter
+    numInstances: 1
+    autoDeploy: false
+    buildCommand: npm test && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    disk:
+      name: rois-et-des-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: PUBLIC_ORIGIN
+        sync: false
+      - key: DATABASE_PATH
+        value: /var/data/rois-et-des.sqlite
+      - key: PERSISTENT_DATA_DIR
+        value: /var/data
+      - key: ADMIN_USERNAMES
+        value: ''
+      - key: TRUST_PROXY
+        value: '0'
